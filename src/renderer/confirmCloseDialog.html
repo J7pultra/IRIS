@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Confirmar Cierre de Pestañas</title>
+  <style>
+    :root {
+      --bg-card: #181a24;
+      --border-card: rgba(255, 255, 255, 0.12);
+      --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      --title-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-body: #cbd5e1;
+      --icon-bg: rgba(239, 68, 68, 0.12);
+      --icon-border: rgba(239, 68, 68, 0.25);
+      --icon-color: #f87171;
+      --badge-bg: rgba(59, 130, 246, 0.15);
+      --badge-border: rgba(59, 130, 246, 0.3);
+      --badge-color: #60a5fa;
+      --cb-border: rgba(255, 255, 255, 0.22);
+      --cb-bg: rgba(255, 255, 255, 0.05);
+      --btn-cancel-bg: rgba(255, 255, 255, 0.06);
+      --btn-cancel-border: rgba(255, 255, 255, 0.12);
+      --btn-cancel-color: #cbd5e1;
+      --btn-cancel-hover-bg: rgba(255, 255, 255, 0.12);
+      --btn-cancel-hover-color: #ffffff;
+      --btn-close-hover: rgba(255, 255, 255, 0.1);
+    }
+
+    body.light-theme {
+      --bg-card: #ffffff;
+      --border-card: rgba(0, 0, 0, 0.1);
+      --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      --title-color: #0f172a;
+      --text-muted: #64748b;
+      --text-body: #334155;
+      --icon-bg: rgba(239, 68, 68, 0.1);
+      --icon-border: rgba(239, 68, 68, 0.2);
+      --icon-color: #ef4444;
+      --badge-bg: rgba(37, 99, 235, 0.08);
+      --badge-border: rgba(37, 99, 235, 0.2);
+      --badge-color: #2563eb;
+      --cb-border: #cbd5e1;
+      --cb-bg: #f8fafc;
+      --btn-cancel-bg: #f1f5f9;
+      --btn-cancel-border: #e2e8f0;
+      --btn-cancel-color: #475569;
+      --btn-cancel-hover-bg: #e2e8f0;
+      --btn-cancel-hover-color: #0f172a;
+      --btn-close-hover: rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    html, body {
+      background: transparent !important;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .dialog-card {
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 18px 20px 16px 20px;
+      box-shadow: var(--shadow-card);
+      animation: dialogPopIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @keyframes dialogPopIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+    }
+
+    .icon-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--icon-bg);
+      border: 1px solid var(--icon-border);
+      color: var(--icon-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+    }
+
+    .header-content {
+      flex: 1;
+      padding-top: 1px;
+    }
+
+    .dialog-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--title-color);
+      letter-spacing: -0.2px;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+
+    .dialog-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .tab-chip {
+      display: inline-block;
+      font-weight: 700;
+      color: var(--badge-color);
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      padding: 1px 7px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin: 0 2px;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .close-btn:hover {
+      background: var(--btn-close-hover);
+      color: var(--title-color);
+    }
+
+    .checkbox-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: var(--text-body);
+      margin-top: 4px;
+      padding-left: 49px;
+      transition: opacity 0.15s;
+    }
+
+    .checkbox-row:hover {
+      opacity: 0.9;
+    }
+
+    .checkbox-row input {
+      display: none;
+    }
+
+    .custom-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--cb-border);
+      border-radius: 4px;
+      background: var(--cb-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .checkbox-row:hover .custom-checkbox {
+      border-color: var(--badge-color);
+    }
+
+    .checkbox-row input:checked + .custom-checkbox {
+      background: #ef4444;
+      border-color: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    }
+
+    .checkbox-row input:checked + .custom-checkbox::after {
+      content: '';
+      width: 3.5px;
+      height: 7px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-0.5px, -1px);
+    }
+
+    .actions-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 9px;
+      border-top: 1px solid var(--border-card);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+
+    .btn-action {
+      font-family: inherit;
+      padding: 7px 18px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+
+    .btn-cancel {
+      background: var(--btn-cancel-bg);
+      border: 1px solid var(--btn-cancel-border);
+      color: var(--btn-cancel-color);
+    }
+
+    .btn-cancel:hover {
+      background: var(--btn-cancel-hover-bg);
+      color: var(--btn-cancel-hover-color);
+    }
+
+    .btn-confirm {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 3px 12px rgba(239, 68, 68, 0.32);
+    }
+
+    .btn-confirm:hover {
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      box-shadow: 0 5px 16px rgba(239, 68, 68, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-confirm:active {
+      transform: translateY(0) scale(0.97);
+    }
+  </style>
+</head>
+<body class="dark-theme">
+
+  <div class="dialog-card">
+    <button class="close-btn" onclick="doCancel()" title="Cancelar (Esc)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="dialog-header">
+      <div class="icon-badge">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+          <line x1="9" x2="15" y1="9" y2="15"/>
+          <line x1="15" x2="9" y1="9" y2="15"/>
+        </svg>
+      </div>
+      <div class="header-content">
+        <div class="dialog-title">¿Quieres cerrar todas las pestañas?</div>
+        <div class="dialog-subtitle">
+          Tienes <span id="tab-count-text" class="tab-chip">3 pestañas</span> abiertas en esta ventana.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <label class="checkbox-row" for="cb-dont-ask">
+        <input type="checkbox" id="cb-dont-ask" />
+        <span class="custom-checkbox"></span>
+        <span>No volver a preguntar al salir</span>
+      </label>
+    </div>
+
+    <div class="actions-row">
+      <button id="btn-cancel" class="btn-action btn-cancel">Cancelar</button>
+      <button id="btn-confirm" class="btn-action btn-confirm">Cerrar todo</button>
+    </div>
+  </div>
+
+  <script>
+    const api = window.confirmCloseApi;
+
+    if (api && api.onInit) {
+      api.onInit((data) => {
+        const count = data?.tabCount || 2;
+        const el = document.getElementById('tab-count-text');
+        if (el) {
+          el.innerText = `${count} pestañas`;
+        }
+
+        const theme = data?.theme || 'dark';
+        if (theme === 'light') {
+          document.body.className = 'light-theme';
+        } else {
+          document.body.className = 'dark-theme';
+        }
+      });
+    }
+
+    function doConfirm() {
+      const dontAsk = !!document.getElementById('cb-dont-ask')?.checked;
+      if (api && api.respond) {
+        api.respond({ confirmed: true, dontAskAgain: dontAsk });
+      }
+    }
+
+    function doCancel() {
+      if (api && api.respond) {
+        api.respond({ confirmed: false, dontAskAgain: false });
+      }
+    }
+
+    document.getElementById('btn-confirm')?.addEventListener('click', doConfirm);
+    document.getElementById('btn-cancel')?.addEventListener('click', doCancel);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        doCancel();
+      } else if (e.key === 'Enter') {
+        doConfirm();
+      }
+    });
+  </script>
+</body>
+</html>

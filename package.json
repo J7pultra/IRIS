@@ -1,0 +1,96 @@
+{
+  "name": "navegadorbeta",
+  "version": "1.0.0",
+  "description": "NavegadorBeta - Lo mejor de ambos mundos: Rendimiento extremo, bloqueo de red nativo, DRM, hibernación, Gemini AI y diseño ultraligero",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "copy-assets": "node scripts/copy-assets.js",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "build:renderer": "tsc -p tsconfig.renderer.json",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer && npm run copy-assets",
+    "dev": "npm run build && electron .",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win",
+    "dist:portable": "npm run build && electron-builder --win portable",
+    "dist:dir": "npm run build && electron-builder --dir"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/J7pultra/IRIS.git"
+  },
+  "dependencies": {
+    "@ghostery/adblocker": "^2.18.0",
+    "@ghostery/adblocker-electron": "^2.18.0",
+    "axios": "^1.18.1",
+    "cross-fetch": "^4.1.0",
+    "ffmpeg-static": "^5.3.0",
+    "peerjs": "^1.5.5",
+    "sharp": "^0.35.1",
+    "yt-dlp-exec": "^1.0.2",
+    "yt-dlp-wrap": "^2.3.12"
+  },
+  "devDependencies": {
+    "@types/electron": "^1.4.38",
+    "@types/node": "^20.14.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.5.0"
+  },
+  "build": {
+    "appId": "com.navegadorbeta.app",
+    "productName": "NavegadorBeta",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**",
+      "**/node_modules/yt-dlp-exec/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NavegadorBeta"
+    }
+  }
+}

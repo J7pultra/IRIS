@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>NavegadorBeta</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+
+  <!-- ========================================================================
+       1. TITLEBAR & TABS BAR
+       ======================================================================== -->
+  <div id="titlebar">
+    <div class="titlebar-drag-spacer"></div>
+
+    <div id="tabs-container">
+      <!-- Tabs se inyectan dinámicamente -->
+    </div>
+
+    <!-- Acciones de Pestañas (+ y IA Sort) alineados perfectamente con las pestañas -->
+    <div class="tab-actions-group">
+      <button id="btn-new-tab" class="tab-action-btn" title="Nueva pestaña (Ctrl+T)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+
+      <button id="btn-magic-sort" class="tab-action-btn tab-magic-sort"
+        title="Agrupar pestañas inteligentemente (Gemini IA)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      </button>
+    </div>
+
+    <div class="titlebar-drag-spacer" style="flex: 1;"></div>
+
+    <!-- Indicador de Modo de Ventana (Incógnito / Tor estilo Brave) -->
+    <div id="window-mode-badge" class="window-mode-badge" style="display: none;"></div>
+
+    <!-- Botones de Control de Ventana (Frameless) -->
+    <div class="window-controls-container">
+      <button id="btn-minimize" class="win-btn" title="Minimizar">
+        <svg width="10" height="1" viewBox="0 0 10 1">
+          <path fill="currentColor" d="M0 0h10v1H0z" />
+        </svg>
+      </button>
+      <button id="btn-maximize" class="win-btn" title="Maximizar / Restaurar">
+        <svg id="icon-maximize" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+          <rect x="0.5" y="0.5" width="9" height="9" />
+        </svg>
+      </button>
+      <button id="btn-close" class="win-btn close" title="Cerrar">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <path fill="currentColor"
+            d="M10 1.007 8.993 0 5 3.993 1.007 0 0 1.007 3.993 5 0 8.993 1.007 10 5 6.007 8.993 10 10 8.993 6.007 5z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       2. TOOLBAR
+       ======================================================================== -->
+  <div id="toolbar">
+    <!-- Navegación -->
+    <div class="nav-group">
+      <button id="btn-back" class="nav-icon-btn disabled" disabled title="Atrás (Alt+Flecha Izquierda)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button id="btn-forward" class="nav-icon-btn disabled" disabled title="Adelante (Alt+Flecha Derecha)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button id="btn-reload" class="nav-icon-btn" title="Recargar esta página (Ctrl+R / F5)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="reload-icon">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M3 3v5h5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button id="btn-turbo" class="nav-icon-btn turbo-mode-btn active" title="Modo Turbo / Velocidad Nativa (Activo)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <button id="btn-home" class="nav-icon-btn" title="Página de inicio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Omnibox -->
+    <form id="omnibox-form" class="omnibox-form">
+      <div id="omnibox-lock" class="omnibox-lock-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </div>
+
+      <input type="text" id="omnibox-input" class="omnibox-input" placeholder="Busca o escribe una dirección web..."
+        autocomplete="off" spellcheck="false" />
+
+      <button type="button" id="btn-bookmark" class="omnibox-bookmark-btn" title="Añadir a marcadores">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+        </svg>
+      </button>
+    </form>
+
+    <!-- Botones de Acción -->
+    <div class="toolbar-actions">
+      <!-- Extensiones -->
+      <button id="btn-extensions" class="nav-icon-btn" title="Extensiones">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.5 2.5 0 0 1 0 5H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.5 2.5 0 0 1 5 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z" />
+        </svg>
+      </button>
+
+      <!-- Gemini AI Pilot (Leo IA) -->
+      <button id="btn-ai-pilot" class="nav-icon-btn ai-pilot-icon-btn" title="Piloto IA (Gemini)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l2.4 5.6L20 10l-4.4 4 1.4 6-5-3.2L7 20l1.4-6L4 10l5.6-2.4L12 2z"/>
+        </svg>
+      </button>
+
+      <!-- Barra Lateral Toggle -->
+      <button id="btn-sidebar" class="nav-icon-btn" title="Barra lateral">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="15" y1="3" x2="15" y2="21"/>
+        </svg>
+      </button>
+
+      <!-- Wallet (Billetera Web3) -->
+      <button id="btn-wallet" class="nav-icon-btn" title="Wallet (Billetera Web3)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+          <path d="M16 12a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+          <path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/>
+        </svg>
+      </button>
+
+      <!-- Marcadores y Listas -->
+      <button id="btn-bookmarks-drawer" class="nav-icon-btn" title="Marcadores y listas">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          <line x1="9" y1="7" x2="15" y2="7"/>
+        </svg>
+      </button>
+
+      <!-- Gestor de Descargas -->
+      <button id="btn-downloads-drawer" class="nav-icon-btn" title="Descargas (Ctrl+J)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+      </button>
+
+      <!-- Modo Cine / Salas Compartidas P2P -->
+      <button id="btn-cinema" class="nav-icon-btn cinema-mode-btn" title="Modo Cine & Salas Compartidas (Ver juntos)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <line x1="7" y1="2" x2="7" y2="22"></line>
+          <line x1="17" y1="2" x2="17" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <line x1="2" y1="7" x2="7" y2="7"></line>
+          <line x1="2" y1="17" x2="7" y2="17"></line>
+          <line x1="17" y1="17" x2="22" y2="17"></line>
+          <line x1="17" y1="7" x2="22" y2="7"></line>
+        </svg>
+      </button>
+
+      <!-- Escudo / Adblock -->
+      <button id="btn-shield" class="shield-toggle-btn" title="Escudo de Protección">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      </button>
+
+      <!-- VPN de Protección (Icono Llave Clásica) -->
+      <button id="btn-vpn-toolbar" class="nav-icon-btn vpn-toolbar-btn" title="VPN de Protección (Desconectada)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7.5" cy="15.5" r="5.5"/>
+          <path d="m21 2-9.6 9.6"/>
+          <path d="m15.5 7.5 3 3L22 7l-3-3"/>
+        </svg>
+        <span id="vpn-toolbar-badge" class="vpn-toolbar-badge" style="display:none;">VPN</span>
+      </button>
+
+      <!-- WhatsApp Mensajes Eliminados y Estados Guardados -->
+      <button id="btn-phantom-header" class="nav-icon-btn" title="Mensajes Eliminados y Estados Guardados (WhatsApp)" style="display: none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+
+      <!-- Menú (3 rayitas - Estilo Brave) -->
+      <button id="btn-menu" class="nav-icon-btn" title="Menú de NavegadorBeta">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de Marcadores (Ctrl+Shift+B) -->
+  <div id="bookmarks-bar" class="bookmarks-bar hidden">
+    <div id="bookmarks-bar-items" class="bookmarks-bar-items">
+      <!-- Los marcadores se inyectan dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Buscador en Página (Ctrl+F) -->
+  <div id="find-in-page-bar" class="find-in-page-bar">
+    <div class="find-in-page-input-wrapper">
+      <input type="text" id="find-in-page-input" placeholder="Buscar en la página..." autocomplete="off" />
+      <span id="find-in-page-counter" class="find-in-page-counter">0/0</span>
+    </div>
+    <button id="btn-find-prev" class="find-nav-btn" title="Anterior (Shift+Enter)">▲</button>
+    <button id="btn-find-next" class="find-nav-btn" title="Siguiente (Enter)">▼</button>
+    <button id="btn-find-close" class="find-close-btn" title="Cerrar (Esc)">✕</button>
+  </div>
+
+  <!-- ========================================================================
+       3. POPUPS & DROPDOWNS
+       ======================================================================== -->
+
+  <!-- Backdrop para cerrar menús al hacer clic fuera -->
+  <div id="menu-backdrop" class="menu-backdrop"></div>
+
+  <!-- Menú / Tarjeta Modo Turbo (Rayito) -->
+  <div id="turbo-popup" class="glass-menu" style="width: 310px;">
+    <div style="padding: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div
+            style="width: 28px; height: 28px; border-radius: 8px; background: rgba(255, 193, 7, 0.15); display: flex; align-items: center; justify-content: center; color: #ffc107;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;">Modo Turbo</div>
+            <div id="turbo-tier-label" style="font-size: 11px; color: #ffc107; font-weight: 500;">Aceleración de
+              Hardware Activa</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="turbo-main-switch" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">
+        Acelera el renderizado por GPU Direct3D11, pre-conexión de red TCP Fast Open y decodificación multimedia nativa.
+      </div>
+
+      <div
+        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Hardware:</span>
+          <span id="turbo-cpu-ram" style="color: #fff; font-weight: 500;">Calculando...</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Gráficos:</span>
+          <span id="turbo-gpu" style="color: #fff; font-weight: 500;">GPU Acelerada</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Precarga DNS / TCP:</span>
+          <span id="turbo-preconnect-status" style="color: #10b981; font-weight: 600;">Activa (0ms lag)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Red HTTP/3 QUIC:</span>
+          <span id="turbo-quic-status" style="color: #10b981; font-weight: 600;">Habilitada</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menú de Escudo / Adblock -->
+  <div id="shield-popup" class="glass-menu" style="width: 280px;">
+    <div style="padding: 10px; text-align: center;">
+      <div style="font-size: 26px; font-weight: 700; color: var(--accent-emerald);" id="shield-popup-total">0</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Anuncios y rastreadores bloqueados
+      </div>
+      <div class="setting-row">
+        <span class="setting-label" style="font-size: 13px;">Proteger este sitio</span>
+        <label class="switch">
+          <input type="checkbox" id="shield-toggle-site" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menú Principal (3 Rayitas) -->
+  <div id="main-menu" class="glass-menu" style="width: 250px;">
+    <button class="menu-item" onclick="window.openInternalPage('beta://nueva-pestana')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      Nueva Pestaña
+    </button>
+    <div class="menu-separator"></div>
+    <button class="menu-item" onclick="window.openInternalPage('beta://ajustes')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+      Configuración y Ajustes
+    </button>
+    <button class="menu-item" onclick="window.openInternalPage('beta://historial')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      Historial de Navegación
+    </button>
+    <button class="menu-item" onclick="window.openInternalPage('beta://historial')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      Máquina del Tiempo
+    </button>
+    <button class="menu-item" onclick="window.openInternalPage('beta://descargas')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+      </svg>
+      Descargas
+    </button>
+    <button class="menu-item" onclick="window.openInternalPage('beta://mensajes-eliminados')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      Mensajes y Estados (WhatsApp)
+    </button>
+    <div class="menu-separator"></div>
+    <button class="menu-item" onclick="window.showToast('NavegadorBeta v1.0 — El navegador rápido, con IA y ligero', 'info')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+      </svg>
+      Acerca de NavegadorBeta
+    </button>
+  </div>
+
+  <!-- ========================================================================
+       4. GEMINI AI SLIDE-OVER DRAWER (Piloto IA)
+       ======================================================================== -->
+  <div id="ai-drawer">
+    <div class="ai-drawer-header">
+      <div class="ai-drawer-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+        <span>Piloto IA (Gemini)</span>
+      </div>
+      <button id="btn-close-ai" class="ai-close-btn" title="Cerrar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Quick action chips -->
+    <div class="ai-quick-actions">
+      <button class="ai-chip" onclick="window.aiQuickAction('analyze')">🔍 Analizar página</button>
+      <button class="ai-chip" onclick="window.aiQuickAction('summarize_video')">🎬 Resumir video</button>
+      <button class="ai-chip" onclick="window.aiQuickAction('translate')">🌐 Traducir</button>
+      <button class="ai-chip" onclick="window.aiQuickAction('autofill')">✍️ Rellenar formulario</button>
+    </div>
+
+    <!-- Chat Messages -->
+    <div id="ai-chat-history" class="ai-messages-container">
+      <div class="ai-msg model">
+        ¡Hola! Soy tu <strong>Piloto IA</strong> integrado en NavegadorBeta. Puedo resumirte esta página, explicarte un
+        video, traducir contenido o auto-rellenar formularios según tu perfil.
+      </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="ai-input-container">
+      <input type="text" id="ai-chat-input" class="ai-input" placeholder="Pregúntale a Gemini..." />
+      <button id="btn-ai-send" class="ai-send-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODO CINE & WATCH PARTY P2P SIDE PANEL (Estilo Will Browser / AplicacionWeb)
+       ======================================================================== -->
+  <div id="cinema-drawer" class="cinema-drawer">
+    <!-- Header -->
+    <div class="cinema-drawer-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="cinema-badge-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+          </svg>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">Sala de Cine P2P</div>
+          <div id="cinema-drawer-code-chip" class="cinema-code-chip" title="Clic para copiar">CINE-XXXXXX 📋</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span id="cinema-drawer-countdown" class="cinema-countdown-chip" title="Tiempo antes de expirar">⏱️ 30:00</span>
+        <button id="btn-close-cinema-drawer" class="ai-close-btn" title="Minimizar panel de chat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status & Action Bar -->
+    <div class="cinema-drawer-controls">
+      <div id="cinema-drawer-status" class="cinema-status-badge">
+        <span class="status-dot"></span>
+        <span id="cinema-drawer-status-text">Esperando amigo...</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label class="cinema-switch-label" title="Luces Apagadas (Modo Teatro)">
+          <span style="font-size: 11px;">💡</span>
+          <label class="switch" style="width: 30px; height: 16px;">
+            <input type="checkbox" id="cinema-drawer-lights-switch" />
+            <span class="slider"></span>
+          </label>
+        </label>
+        <button id="btn-cinema-drawer-leave" class="cinema-leave-mini-btn" title="Salir de la sala">Salir</button>
+      </div>
+    </div>
+
+    <!-- Live P2P Chat Messages Feed -->
+    <div id="cinema-chat-messages" class="cinema-chat-messages">
+      <div class="cinema-chat-welcome">
+        <div style="font-size: 24px; margin-bottom: 6px;">🍿</div>
+        <div style="font-weight: 600; color: #fff; font-size: 13px;">¡Sala de Cine Lista!</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.4;">
+          Comparte el código con tu amigo para ver videos sincronizados y chatear en tiempo real a distancia.
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Input Form -->
+    <div class="cinema-chat-input-bar">
+      <input type="text" id="cinema-chat-input" placeholder="Escribe un mensaje en la sala..." autocomplete="off" />
+      <button id="btn-cinema-chat-send" title="Enviar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       5. INTERNAL SYSTEM PAGES (beta://)
+       ======================================================================== -->
+  <div id="internal-pages">
+    <!-- El contenido de la página interna activa se inyecta aquí dinámicamente -->
+  </div>
+
+  <!-- ========================================================================
+       OVERLAY: CONEXIÓN EN VIVO A LA RED TOR (Estilo Brave Tor Circuit)
+       ======================================================================== -->
+  <div id="tor-connecting-overlay" class="tor-connecting-overlay" style="display: none;">
+    <div class="tor-connecting-card">
+      <div class="tor-onion-anim-wrap">
+        <div class="tor-radar-ring"></div>
+        <div class="tor-radar-ring delay"></div>
+        <div class="tor-onion-icon">🧅</div>
+      </div>
+
+      <h2 class="tor-connecting-title">Estableciendo Circuito Tor</h2>
+      <p class="tor-connecting-desc">
+        NavegadorBeta está construyendo un túnel privado con 3 capas de cifrado Onion antes de navegar de forma 100% anónima.
+      </p>
+
+      <!-- URL de destino -->
+      <div class="tor-target-pill">
+        <span style="font-size: 13px;">🔒</span>
+        <span id="tor-target-url-text" class="tor-target-text">Conectando...</span>
+      </div>
+
+      <!-- Barra de progreso en vivo -->
+      <div class="tor-progress-container">
+        <div class="tor-progress-bar-bg">
+          <div id="tor-overlay-progress-bar" class="tor-progress-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div class="tor-progress-labels">
+          <span id="tor-overlay-status-label" class="tor-progress-status">Negociando claves criptográficas...</span>
+          <span id="tor-overlay-percent-label" class="tor-progress-percent">0%</span>
+        </div>
+      </div>
+
+      <!-- Pasos del circuito (Guard -> Relay -> Exit) -->
+      <div class="tor-circuit-nodes">
+        <div class="tor-node-item" id="tor-node-guard">
+          <div class="tor-node-icon">🛡️</div>
+          <div class="tor-node-info">
+            <span class="tor-node-title">1. Entrada (Guard)</span>
+            <span class="tor-node-sub">Oculta tu IP</span>
+          </div>
+        </div>
+        <div class="tor-node-separator">→</div>
+        <div class="tor-node-item" id="tor-node-relay">
+          <div class="tor-node-icon">🔄</div>
+          <div class="tor-node-info">
+            <span class="tor-node-title">2. Intermedio (Relay)</span>
+            <span class="tor-node-sub">Cifrado de tránsito</span>
+          </div>
+        </div>
+        <div class="tor-node-separator">→</div>
+        <div class="tor-node-item" id="tor-node-exit">
+          <div class="tor-node-icon">🌐</div>
+          <div class="tor-node-info">
+            <span class="tor-node-title">3. Salida (Exit)</span>
+            <span class="tor-node-sub">Entrega al destino</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tor-security-guarantee">
+        <span>✓ WebRTC Desactivado</span>
+        <span>✓ DNS SOCKS5 Aislado</span>
+        <span>✓ Fingerprinting Bloqueado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODALES DEL NAVEGADOR (Estilo Chrome / Brave)
+       ======================================================================== -->
+  <!-- Modal: Eliminar Datos de Navegación -->
+  <div id="modal-clear-data" class="browser-modal-overlay">
+    <div class="browser-modal-box">
+      <div class="browser-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          <h3>Eliminar datos de navegación</h3>
+        </div>
+        <button class="browser-modal-close" onclick="window.closeAllBrowserModals()">✕</button>
+      </div>
+      <div class="browser-modal-body">
+        <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:6px;">Intervalo de tiempo:</label>
+        <select id="clear-data-time-range" class="browser-modal-select">
+          <option value="1h">Última hora</option>
+          <option value="24h">Últimas 24 horas</option>
+          <option value="7d">Últimos 7 días</option>
+          <option value="all" selected>Desde siempre</option>
+        </select>
+
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+          <label class="modal-checkbox-row">
+            <input type="checkbox" id="clear-cb-history" checked />
+            <div>
+              <div style="font-weight:600; color:#fff; font-size:13px;">Historial de navegación</div>
+              <div style="font-size:11px; color:#94a3b8;">Borra el historial de páginas visitadas</div>
+            </div>
+          </label>
+          <label class="modal-checkbox-row">
+            <input type="checkbox" id="clear-cb-cookies" checked />
+            <div>
+              <div style="font-weight:600; color:#fff; font-size:13px;">Cookies y datos de sitios web</div>
+              <div style="font-size:11px; color:#94a3b8;">Cierra sesión en sitios web</div>
+            </div>
+          </label>
+          <label class="modal-checkbox-row">
+            <input type="checkbox" id="clear-cb-cache" checked />
+            <div>
+              <div style="font-weight:600; color:#fff; font-size:13px;">Archivos e imágenes en caché</div>
+              <div style="font-size:11px; color:#94a3b8;">Libera espacio en disco y memoria RAM</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="browser-modal-footer">
+        <button class="modal-btn-secondary" onclick="window.closeAllBrowserModals()">Cancelar</button>
+        <button class="modal-btn-danger" id="btn-confirm-clear-data">Eliminar datos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Código QR Móvil -->
+  <div id="modal-qr-code" class="browser-modal-overlay">
+    <div class="browser-modal-box" style="max-width:340px; text-align:center;">
+      <div class="browser-modal-header">
+        <h3>Escanear código QR</h3>
+        <button class="browser-modal-close" onclick="window.closeAllBrowserModals()">✕</button>
+      </div>
+      <div class="browser-modal-body" style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+        <div id="qr-code-img-container" style="background:#fff; padding:12px; border-radius:12px; display:inline-block;"></div>
+        <div id="qr-code-url-text" style="font-size:11px; color:#94a3b8; word-break:break-all; max-width:280px;"></div>
+      </div>
+      <div class="browser-modal-footer" style="justify-content:center;">
+        <button class="modal-btn-primary" id="btn-copy-qr-url">📋 Copiar enlace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Administrador de Tareas -->
+  <div id="modal-task-manager" class="browser-modal-overlay">
+    <div class="browser-modal-box" style="max-width:620px;">
+      <div class="browser-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <h3>Administrador de tareas del navegador</h3>
+        </div>
+        <button class="browser-modal-close" onclick="window.closeAllBrowserModals()">✕</button>
+      </div>
+      <div class="browser-modal-body" style="padding:0;">
+        <div class="task-manager-table-header">
+          <span style="flex:2;">Pestaña / Proceso</span>
+          <span style="flex:1; text-align:right;">Uso de RAM</span>
+          <span style="flex:1; text-align:right;">Acción</span>
+        </div>
+        <div id="task-manager-list" class="task-manager-list">
+          <!-- Rellenado dinámicamente -->
+        </div>
+      </div>
+      <div class="browser-modal-footer">
+        <button class="modal-btn-secondary" onclick="window.closeAllBrowserModals()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Atajos de Teclado Universales -->
+  <div id="modal-shortcuts" class="browser-modal-overlay">
+    <div class="browser-modal-box" style="max-width:560px;">
+      <div class="browser-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+          <h3>Atajos de teclado universales</h3>
+        </div>
+        <button class="browser-modal-close" onclick="window.closeAllBrowserModals()">✕</button>
+      </div>
+      <div class="browser-modal-body" style="max-height:380px; overflow-y:auto; padding:10px 18px;">
+        <table class="shortcuts-table">
+          <tr><td>Nueva pestaña</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">T</span></td></tr>
+          <tr><td>Cerrar pestaña activa</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">W</span></td></tr>
+          <tr><td>Reabrir pestaña cerrada</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">Mayús</span>+<span class="key-badge">T</span></td></tr>
+          <tr><td>Nueva ventana privada (Incógnito)</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">Mayús</span>+<span class="key-badge">N</span></td></tr>
+          <tr><td>Nueva ventana privada con Tor</td><td><span class="key-badge">Mayús</span>+<span class="key-badge">Alt</span>+<span class="key-badge">N</span></td></tr>
+          <tr><td>Buscar en la página</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">F</span></td></tr>
+          <tr><td>Añadir marcador</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">D</span></td></tr>
+          <tr><td>Mostrar/Ocultar barra de marcadores</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">Mayús</span>+<span class="key-badge">B</span></td></tr>
+          <tr><td>Historial de navegación</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">H</span></td></tr>
+          <tr><td>Descargas</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">J</span></td></tr>
+          <tr><td>Eliminar datos de navegación</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">Mayús</span>+<span class="key-badge">Supr</span></td></tr>
+          <tr><td>Imprimir página</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">P</span></td></tr>
+          <tr><td>Ver código fuente</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">U</span></td></tr>
+          <tr><td>Recargar página</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">R</span> o <span class="key-badge">F5</span></td></tr>
+          <tr><td>Recarga forzada (ignorar caché)</td><td><span class="key-badge">Ctrl</span>+<span class="key-badge">F5</span></td></tr>
+          <tr><td>Pantalla completa</td><td><span class="key-badge">F11</span></td></tr>
+          <tr><td>Herramientas de desarrollador</td><td><span class="key-badge">F12</span></td></tr>
+          <tr><td>Administrador de tareas</td><td><span class="key-badge">Mayús</span>+<span class="key-badge">Esc</span></td></tr>
+        </table>
+      </div>
+      <div class="browser-modal-footer">
+        <button class="modal-btn-primary" onclick="window.closeAllBrowserModals()">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Administrador de Contraseñas -->
+  <div id="modal-passwords" class="browser-modal-overlay">
+    <div class="browser-modal-box" style="max-width:540px;">
+      <div class="browser-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M21 3l-8.5 8.5"/><path d="M15.5 8.5l2 2"/></svg>
+          <h3>Administrador de contraseñas</h3>
+        </div>
+        <button class="browser-modal-close" onclick="window.closeAllBrowserModals()">✕</button>
+      </div>
+      <div class="browser-modal-body" style="padding:14px 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px;">
+          <input type="text" id="passwords-search-input" placeholder="Buscar contraseñas guardadas..." class="browser-modal-input" style="flex:1;" />
+          <button class="modal-btn-primary" id="btn-add-credential" style="white-space:nowrap;">+ Añadir</button>
+        </div>
+        <div id="passwords-list" class="passwords-list" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+          <!-- Rellenado dinámicamente -->
+        </div>
+      </div>
+      <div class="browser-modal-footer">
+        <button class="modal-btn-secondary" onclick="window.closeAllBrowserModals()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Quick History Dropdown (Right-click on Back / Forward) -->
+  <div id="nav-history-dropdown" class="nav-history-dropdown hidden"></div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script src="./peerjs.min.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+
+</html>

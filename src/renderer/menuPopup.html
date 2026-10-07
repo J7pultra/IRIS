@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    body {
+      background: transparent !important;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .popup-card {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #181926 0%, #12131d 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: appear 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .popup-card.active {
+      display: flex;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: scale(0.97) translateY(-6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Switch Component */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: 0.25s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    input:checked + .slider {
+      background-color: #6366f1;
+    }
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+    input#turbo-switch:checked + .slider {
+      background-color: #f59e0b;
+    }
+    input#shield-switch:checked + .slider {
+      background-color: #10b981;
+    }
+
+    /* Menu Items */
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 7px 10px;
+      border: none;
+      background: transparent;
+      color: #e2e8f0;
+      font-size: 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s, color 0.12s;
+      font-family: inherit;
+    }
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .menu-item svg {
+      opacity: 0.85;
+      flex-shrink: 0;
+      color: #94a3b8;
+    }
+    .menu-item:hover svg {
+      opacity: 1;
+      color: #fff;
+    }
+    .menu-separator {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.07);
+      margin: 4px 6px;
+    }
+    .menu-badge {
+      margin-left: auto;
+      font-size: 11px;
+      color: #94a3b8;
+      letter-spacing: 0.2px;
+    }
+    .menu-chevron {
+      margin-left: auto;
+      opacity: 0.45;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+    }
+    .menu-item:hover .menu-chevron {
+      opacity: 0.9;
+      color: #fff;
+    }
+
+    /* Barra lateral row & segmented controls */
+    .menu-row-complex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 10px;
+      font-size: 13px;
+      color: #e2e8f0;
+      border-radius: 6px;
+    }
+    .menu-row-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      white-space: nowrap;
+    }
+    .menu-row-label svg {
+      opacity: 0.85;
+      flex-shrink: 0;
+      color: #94a3b8;
+    }
+    .menu-segmented-group {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .seg-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .seg-btn:hover {
+      color: #fff;
+    }
+    .seg-btn.active {
+      background: #3b82f6;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Submenus in #card-menu */
+    .submenu-container {
+      display: none;
+      flex-direction: column;
+      animation: appearSub 0.15s ease-out;
+    }
+    .submenu-container.active {
+      display: flex;
+    }
+    @keyframes appearSub {
+      from { opacity: 0; transform: translateX(6px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .submenu-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px 8px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .submenu-back-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .submenu-back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    /* Zoom Row Controls */
+    .menu-zoom-group {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 2px 4px;
+      gap: 3px;
+    }
+    .zoom-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: transparent;
+      border: none;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .zoom-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .zoom-val {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e2e8f0;
+      min-width: 44px;
+      text-align: center;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      user-select: none;
+    }
+    .zoom-val:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #60a5fa;
+    }
+    .fs-btn {
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0 4px 4px 0;
+      padding-left: 2px;
+      margin-left: 2px;
+    }
+
+    #card-menu, #card-wallet, #card-vpn, #card-extensions, #card-bookmarks {
+      max-height: calc(100vh - 12px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px;
+    }
+    #card-menu::-webkit-scrollbar,
+    #card-wallet::-webkit-scrollbar,
+    #card-vpn::-webkit-scrollbar,
+    #card-extensions::-webkit-scrollbar,
+    #card-bookmarks::-webkit-scrollbar {
+      width: 5px;
+    }
+    #card-menu::-webkit-scrollbar-thumb,
+    #card-wallet::-webkit-scrollbar-thumb,
+    #card-vpn::-webkit-scrollbar-thumb,
+    #card-extensions::-webkit-scrollbar-thumb,
+    #card-bookmarks::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 10px;
+    }
+
+    /* Wallet Card Styles */
+    .wallet-card-header {
+      padding: 10px 12px 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .wallet-balance-box {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+      border: 1px solid rgba(249, 115, 22, 0.25);
+      border-radius: 10px;
+      padding: 12px;
+      margin: 10px 8px;
+      text-align: center;
+    }
+    .wallet-actions {
+      display: flex;
+      gap: 6px;
+      padding: 0 8px 10px;
+    }
+    .wallet-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 7px 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .wallet-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .token-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      border-radius: 6px;
+      transition: background 0.12s;
+      cursor: pointer;
+    }
+    .token-row:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* VPN & Extensions item styles */
+    .ext-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 6px;
+    }
+
+    /* =========================================================================
+       VPN CARD: HERO POWER BUTTON & LAYERED RINGS (URBAN/NORD VPN STYLE)
+       ========================================================================= */
+    .vpn-hero-container {
+      position: relative;
+      width: 136px;
+      height: 136px;
+      margin: 6px auto 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vpn-ring {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .vpn-ring-outer {
+      width: 132px;
+      height: 132px;
+      border: 1px dashed rgba(255, 255, 255, 0.09);
+    }
+
+    .vpn-ring-middle {
+      width: 110px;
+      height: 110px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
+    }
+
+    /* Connected state for rings */
+    .vpn-hero-container.connected .vpn-ring-outer {
+      border: 1.5px solid rgba(16, 185, 129, 0.35);
+      animation: vpnSpinRing 16s linear infinite;
+    }
+
+    .vpn-hero-container.connected .vpn-ring-middle {
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
+    }
+
+    .vpn-hero-container.connecting .vpn-ring-outer {
+      border: 1.5px dashed rgba(245, 158, 11, 0.5);
+      animation: vpnSpinRing 3s linear infinite;
+    }
+
+    .vpn-hero-container.connecting .vpn-ring-middle {
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+      animation: vpnPulseMiddle 1.2s infinite alternate;
+    }
+
+    @keyframes vpnSpinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes vpnPulseMiddle {
+      0% { transform: scale(0.95); opacity: 0.6; }
+      100% { transform: scale(1.05); opacity: 1; }
+    }
+
+    /* The Main Power Button */
+    .vpn-power-btn {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 2.5px solid rgba(255, 255, 255, 0.12);
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 2;
+      outline: none;
+    }
+
+    .vpn-power-btn:hover:not(:disabled) {
+      transform: scale(1.04);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #818cf8;
+      box-shadow: 0 10px 28px rgba(99, 102, 241, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.15);
+    }
+
+    .vpn-power-btn:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    .vpn-power-btn.connected {
+      background: linear-gradient(145deg, #065f46, #047857);
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.5), inset 0 2px 6px rgba(255, 255, 255, 0.3);
+    }
+
+    .vpn-power-btn.connecting {
+      background: linear-gradient(145deg, #78350f, #b45309);
+      border-color: #fbbf24;
+      color: #ffffff;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
+    }
+
+    .vpn-power-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      filter: grayscale(0.5);
+    }
+
+    /* Status badge */
+    .vpn-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+
+    .vpn-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+
+    .vpn-status-badge.connected {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .vpn-status-badge.connected .vpn-status-dot {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .vpn-status-badge.connecting {
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .vpn-status-badge.connecting .vpn-status-dot {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+      animation: vpnPulseAnim 0.8s infinite alternate;
+    }
+
+    .vpn-cooldown-text {
+      font-size: 11px;
+      color: #f59e0b;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+
+    /* Selected location card */
+    .vpn-selected-loc-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 6px;
+    }
+
+    .vpn-selected-loc-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .vpn-selected-loc-card.disabled {
+      cursor: default;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    .vpn-loc-chevron {
+      color: #64748b;
+      transition: transform 0.25s ease;
+      display: flex;
+      align-items: center;
+    }
+
+    .vpn-loc-chevron.open {
+      transform: rotate(90deg);
+      color: #818cf8;
+    }
+
+    /* Drawer of countries */
+    .vpn-location-drawer {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 6px;
+      animation: vpnFadeSlide 0.2s ease-out;
+    }
+
+    @keyframes vpnFadeSlide {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .vpn-country-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: 11.5px;
+      width: 100%;
+      text-align: left;
+      transition: all 0.15s;
+    }
+
+    .vpn-country-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .vpn-country-item.active {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .vpn-circle-flag {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      display: block;
+    }
+
+    .vpn-flag-icon-auto {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .vpn-signal-group {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .vpn-ping-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: -0.2px;
+    }
+
+    .vpn-signal-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2.5px;
+      height: 14px;
+    }
+
+    .vpn-signal-bar {
+      width: 3px;
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 1px;
+      transition: all 0.2s ease;
+    }
+    .vpn-signal-bar.b1 { height: 4px; }
+    .vpn-signal-bar.b2 { height: 7px; }
+    .vpn-signal-bar.b3 { height: 10px; }
+    .vpn-signal-bar.b4 { height: 14px; }
+
+    /* 4 Barras de señal (Excelente: Auto, Alemania, Países Bajos, España) */
+    .vpn-signal-bars[data-bars="4"] .vpn-signal-bar {
+      background: #10b981;
+      box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+    }
+
+    /* 3 Barras de señal (Muy Buena: EE.UU., Francia, Reino Unido) */
+    .vpn-signal-bars[data-bars="3"] .vpn-signal-bar.b1,
+    .vpn-signal-bars[data-bars="3"] .vpn-signal-bar.b2,
+    .vpn-signal-bars[data-bars="3"] .vpn-signal-bar.b3 {
+      background: #10b981;
+      box-shadow: 0 0 4px rgba(16, 185, 129, 0.4);
+    }
+    .vpn-signal-bars[data-bars="3"] .vpn-signal-bar.b4 {
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: none;
+    }
+
+    .vpn-country-item.active .vpn-ping-tag {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+
+    /* Info Box */
+    .vpn-info-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      animation: vpnFadeSlide 0.25s ease;
+    }
+
+    /* Cancel / Disconnect Button */
+    .vpn-disconnect-btn {
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .vpn-disconnect-btn:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== VISTA: MODO TURBO ==================== -->
+  <div id="card-turbo" class="popup-card">
+    <div style="padding: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 30px; height: 30px; border-radius: 8px; background: rgba(255, 193, 7, 0.15); display: flex; align-items: center; justify-content: center; color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.25);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;">Modo Turbo</div>
+            <div id="turbo-tier-label" style="font-size: 11px; color: #ffc107; font-weight: 500;">Aceleración Activa</div>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="turbo-switch" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin-bottom: 12px;">
+        Acelera el renderizado por GPU Direct3D11, pre-conexión de red TCP Fast Open y decodificación multimedia nativa.
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 7px; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Hardware:</span>
+          <span id="turbo-cpu-ram" style="color: #fff; font-weight: 500;">Calculando...</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Gráficos:</span>
+          <span id="turbo-gpu" style="color: #fff; font-weight: 500;">GPU Acelerada</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Precarga DNS / TCP:</span>
+          <span id="turbo-preconnect" style="color: #10b981; font-weight: 600;">Activa (0ms lag)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Red HTTP/3 QUIC:</span>
+          <span id="turbo-quic" style="color: #10b981; font-weight: 600;">Habilitada</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: ESCUDO / ADBLOCK ==================== -->
+  <div id="card-shield" class="popup-card">
+    <div style="padding: 14px; text-align: center;">
+      <div style="width: 36px; height: 36px; margin: 0 auto 8px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div style="font-size: 26px; font-weight: 800; color: #10b981; line-height: 1.1;" id="shield-count">0</div>
+      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 14px;">Anuncios y rastreadores bloqueados</div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="text-align: left;">
+          <div style="font-size: 12px; font-weight: 600; color: #fff;">Proteger este sitio</div>
+          <div id="shield-domain" style="font-size: 10px; color: #64748b;">sitio actual</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="shield-switch" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Sección de Auto-Actualización y Parches de YouTube -->
+      <div style="margin-top: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 9px 11px; text-align: left;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;" id="shield-status-dot"></span>
+            <span style="font-size: 11px; font-weight: 700; color: #fff;">Parches Anti-Adblock</span>
+          </div>
+          <span id="shield-rules-badge" style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">Al día</span>
+        </div>
+        <div id="shield-sources-label" style="font-size: 10px; color: #94a3b8; line-height: 1.3; margin-bottom: 7px;">
+          uBlock Quick-Fixes + Brave Shields (Auto-actualizado)
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #64748b;">
+          <span id="shield-last-update">Verificado recientemente</span>
+          <button id="btn-update-rules" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span id="btn-update-rules-text">Actualizar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: MODO CINE / SALA COMPARTIDA ==================== -->
+  <div id="card-cinema" class="popup-card">
+    <div style="padding: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 30px; height: 30px; border-radius: 8px; background: rgba(236, 72, 153, 0.15); display: flex; align-items: center; justify-content: center; color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.3);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+              <line x1="7" y1="2" x2="7" y2="22"></line>
+              <line x1="17" y1="2" x2="17" y2="22"></line>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="2" y1="7" x2="7" y2="7"></line>
+              <line x1="2" y1="17" x2="7" y2="17"></line>
+              <line x1="17" y1="17" x2="22" y2="17"></line>
+              <line x1="17" y1="7" x2="22" y2="7"></line>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 700; color: #fff;">Modo Cine & Salas</div>
+            <div id="cinema-subtext" style="font-size: 11px; color: #ec4899; font-weight: 500;">Ver videos juntos sincronizados</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Luces Apagadas (Theater Dark Mode) -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="text-align: left;">
+          <div style="font-size: 12px; font-weight: 600; color: #fff;">💡 Luces Apagadas</div>
+          <div style="font-size: 10px; color: #64748b;">Atenúa todo excepto el video</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cinema-lights-switch" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Sección Sala: No Conectado -->
+      <div id="cinema-view-idle" style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btn-create-room" class="menu-item" style="background: linear-gradient(135deg, rgba(236,72,153,0.2) 0%, rgba(99,102,241,0.2) 100%); border: 1px solid rgba(236,72,153,0.3); justify-content: center; font-weight: 600; color: #fff; padding: 9px;">
+          ✨ Crear Nueva Sala de Cine
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin: 2px 0;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+          <span style="font-size: 10px; color: #64748b; text-transform: uppercase;">o unirse a sala</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+          <input id="input-join-code" type="text" placeholder="CÓDIGO (EJ: CINE-ABCD)" maxlength="12" style="flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 7px 10px; font-size: 11px; color: #fff; text-transform: uppercase; letter-spacing: 1px; outline: none;" />
+          <button id="btn-join-room" style="background: #6366f1; border: none; border-radius: 8px; color: #fff; font-size: 11px; font-weight: 600; padding: 0 12px; cursor: pointer;">
+            Unirse
+          </button>
+        </div>
+      </div>
+
+      <!-- Sección Sala: Conectado -->
+      <div id="cinema-view-connected" style="display: none; flex-direction: column; gap: 8px;">
+        <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 10px; color: #10b981; font-weight: 600; margin-bottom: 2px;">🟢 CONECTADO A SALA</div>
+          <div id="cinema-connected-code" style="font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 2px;">CINE-XXXX</div>
+          <div id="cinema-role-label" style="font-size: 10px; color: #94a3b8; margin-top: 2px;">👑 Anfitrión (Controlas el video)</div>
+        </div>
+
+        <button id="btn-open-drawer" class="menu-item" style="background: linear-gradient(135deg, rgba(236,72,153,0.25) 0%, rgba(99,102,241,0.25) 100%); border: 1px solid rgba(236,72,153,0.4); justify-content: center; font-size: 11px; font-weight: 600; color: #fff; padding: 9px;">
+          💬 Abrir Chat y Video Lado a Lado
+        </button>
+
+        <button id="btn-copy-code" class="menu-item" style="background: rgba(255,255,255,0.06); justify-content: center; font-size: 11px; font-weight: 500;">
+          📋 Copiar Código para Amigo
+        </button>
+
+        <button id="btn-leave-room" class="menu-item" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); justify-content: center; font-weight: 600; padding: 8px;">
+          Salir de la Sala
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: MENÚ PRINCIPAL (ESTILO BRAVE) ==================== -->
+  <div id="card-menu" class="popup-card">
+    <div id="menu-main-view" style="display: flex; flex-direction: column;">
+      <!-- Pestañas y Ventanas -->
+      <button class="menu-item" onclick="sendAction('new-tab', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Nueva pestaña</span>
+        <span class="menu-badge">Ctrl+T</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('new-window', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Nueva ventana</span>
+        <span class="menu-badge">Ctrl+N</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('new-private', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l4-7h10l4 7"/><circle cx="7" cy="15" r="4"/><circle cx="17" cy="15" r="4"/><line x1="11" y1="15" x2="13" y2="15"/></svg>
+        <span>Nueva ventana de incógnito</span>
+        <span class="menu-badge">Ctrl+Mayús+N</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('new-tor', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="15" x2="12" y2="17"/></svg>
+        <span>Nueva ventana privada con Tor</span>
+        <span class="menu-badge">Mayús+Alt+N</span>
+      </button>
+
+      <div class="menu-separator"></div>
+
+      <!-- Servicios Especiales -->
+      <button class="menu-item" onclick="sendAction('ai-pilot', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5.6L20 10l-4.4 4 1.4 6-5-3.2L7 20l1.4-6L4 10l5.6-2.4L12 2z"/></svg>
+        <span>Leo IA / Piloto IA</span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('wallet')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 12a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg>
+        <span>Wallet</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('vpn')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7.5" cy="15.5" r="5.5"/>
+          <path d="m21 2-9.6 9.6"/>
+          <path d="m15.5 7.5 3 3L22 7l-3-3"/>
+        </svg>
+        <span>VPN de Protección</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+
+      <div class="menu-separator"></div>
+
+      <!-- Barra Lateral con Segmentos Interactivos -->
+      <div class="menu-row-complex">
+        <div class="menu-row-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <span>Barra lateral</span>
+        </div>
+        <div class="menu-segmented-group">
+          <button class="seg-btn" id="seg-sidebar-on" onclick="setSidebarMode('active')">Activada</button>
+          <button class="seg-btn" id="seg-sidebar-auto" onclick="setSidebarMode('auto')">Ocultar autom.</button>
+          <button class="seg-btn active" id="seg-sidebar-off" onclick="setSidebarMode('disabled')">Desactivado</button>
+        </div>
+      </div>
+
+      <div class="menu-separator"></div>
+
+      <!-- Navegación & Datos -->
+      <button class="menu-item" onclick="openSubmenu('passwords')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M21 3l-8.5 8.5"/><path d="M15.5 8.5l2 2"/><path d="M18.5 5.5l2 2"/></svg>
+        <span>Contraseñas y Autocompletar</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('history')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Historial</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('bookmarks')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Marcadores y listas</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="sendAction('downloads', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Descargas</span>
+        <span class="menu-badge">Ctrl+J</span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('extensions')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.5 2.5 0 0 1 0 5H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.5 2.5 0 0 1 5 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>
+        <span>Extensiones</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="sendAction('clear-data-dialog', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        <span>Eliminar datos de navegación...</span>
+        <span class="menu-badge">Ctrl+Mayús+Supr</span>
+      </button>
+
+      <div class="menu-separator"></div>
+
+      <!-- Zoom Interactivo -->
+      <div class="menu-row-complex">
+        <div class="menu-row-label">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          <span>Zoom</span>
+        </div>
+        <div class="menu-zoom-group">
+          <button class="zoom-btn" onclick="adjustZoom(-0.1)" title="Alejar zoom">−</button>
+          <span class="zoom-val" id="menu-zoom-display" onclick="adjustZoom(0)" title="Restablecer 100%">100 %</span>
+          <button class="zoom-btn" onclick="adjustZoom(0.1)" title="Acercar zoom">+</button>
+          <button class="zoom-btn fs-btn" onclick="sendAction('toggle-fullscreen', null, true)" title="Pantalla completa">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="menu-separator"></div>
+
+      <!-- Herramientas de Página -->
+      <button class="menu-item" onclick="sendAction('print', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Imprimir...</span>
+        <span class="menu-badge">Ctrl+P</span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('search')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="10" y1="13" x2="14" y2="13"/><line x1="10" y1="17" x2="14" y2="17"/></svg>
+        <span>Buscar y editar</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('share')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        <span>Guardar y compartir</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('tools')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <span>Más herramientas</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+
+      <div class="menu-separator"></div>
+
+      <!-- Ayuda & Sistema -->
+      <button class="menu-item" onclick="openSubmenu('help')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Ayuda</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+      <button class="menu-item" onclick="sendAction('settings', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Configuración</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('exit', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Salir</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: CONTRASEÑAS -->
+    <div id="sub-passwords" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Contraseñas y Autocompletar</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('open-passwords', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M21 3l-8.5 8.5"/><path d="M15.5 8.5l2 2"/></svg>
+        <span>Administrador de contraseñas...</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('check-passwords', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Comprobación de seguridad</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('settings', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Métodos de pago y direcciones</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: HISTORIAL -->
+    <div id="sub-history" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Historial</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('history', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>Historial completo</span>
+        <span class="menu-badge">Ctrl+H</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('reopen-tab', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <span>Pestañas cerradas recientemente</span>
+        <span class="menu-badge">Ctrl+Mayús+T</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('clear-data-dialog', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        <span style="color:#f87171;">Eliminar datos de navegación...</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: MARCADORES -->
+    <div id="sub-bookmarks" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Marcadores y listas</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('bookmark-current', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span>Añadir a marcadores...</span>
+        <span class="menu-badge">Ctrl+D</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('toggle-bookmarks-bar', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+        <span>Mostrar barra de marcadores</span>
+        <span class="menu-badge">Ctrl+Mayús+B</span>
+      </button>
+      <button class="menu-item" onclick="openSubmenu('bm-full')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Ver todos los marcadores guardados</span>
+        <span class="menu-chevron"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: EXTENSIONES -->
+    <div id="sub-extensions" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Extensiones</span>
+      </div>
+      <button class="menu-item" onclick="openSubmenu('ext-full')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.5 2.5 0 0 1 0 5H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.5 2.5 0 0 1 5 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>
+        <span>Panel de extensiones instaladas</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('open-web-store', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span>Visitar Chrome Web Store</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('settings', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Gestionar extensiones</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: BUSCAR Y EDITAR -->
+    <div id="sub-search" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Buscar y editar</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('open-find-in-page', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Buscar en la página...</span>
+        <span class="menu-badge">Ctrl+F</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('cut', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        <span>Cortar</span>
+        <span class="menu-badge">Ctrl+X</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('copy', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copiar</span>
+        <span class="menu-badge">Ctrl+C</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('paste', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        <span>Pegar</span>
+        <span class="menu-badge">Ctrl+V</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: GUARDAR Y COMPARTIR -->
+    <div id="sub-share" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Guardar y compartir</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('save-share', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copiar enlace de la página</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('open-qr-code', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Crear código QR para teléfono</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('share-whatsapp', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>Compartir por WhatsApp Web</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: MÁS HERRAMIENTAS -->
+    <div id="sub-tools" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Más herramientas</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('more-tools', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <span>Herramientas para desarrolladores</span>
+        <span class="menu-badge">F12</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('open-task-manager', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Administrador de tareas</span>
+        <span class="menu-badge">Mayús+Esc</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('view-source', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Ver código fuente</span>
+        <span class="menu-badge">Ctrl+U</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('clear-data-dialog', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        <span style="color:#f87171;">Eliminar datos de navegación...</span>
+      </button>
+    </div>
+
+    <!-- SUBMENU: AYUDA -->
+    <div id="sub-help" class="submenu-container">
+      <div class="submenu-header">
+        <button class="submenu-back-btn" onclick="backToMainMenu()">←</button>
+        <span>Ayuda</span>
+      </div>
+      <button class="menu-item" onclick="sendAction('about', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Acerca de NavegadorBeta</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('open-shortcuts', null, true)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+        <span>Atajos de teclado universales</span>
+      </button>
+      <button class="menu-item" onclick="sendAction('update-adblock-rules', null, false)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Buscar actualizaciones de filtros</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ==================== VISTA: WALLET WEB3 / BRAVE WALLET ==================== -->
+  <div id="card-wallet" class="popup-card">
+    <div class="wallet-card-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="submenu-back-btn" onclick="backToMainMenu()" title="Volver al menú">←</button>
+        <div style="width:28px; height:28px; border-radius:8px; background:rgba(249,115,22,0.15); display:flex; align-items:center; justify-content:center; color:#f97316;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 12a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#fff;">Brave Wallet Web3</div>
+          <div style="font-size:10px; color:#f97316; font-weight:600;">Ethereum Mainnet 🟢</div>
+        </div>
+      </div>
+      <span style="font-size:10px; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; color:#94a3b8;">Multi-Chain</span>
+    </div>
+
+    <div class="wallet-balance-box">
+      <div style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Saldo Total de la Cartera</div>
+      <div style="font-size:24px; font-weight:800; color:#fff; letter-spacing:0.5px;">$3,842.50 <span style="font-size:11px; color:#10b981; font-weight:600;">+5.4%</span></div>
+      <div style="font-size:10px; color:#64748b; margin-top:2px;">Cuenta 1: 0x71C8...49B2</div>
+    </div>
+
+    <div class="wallet-actions">
+      <button class="wallet-btn" onclick="sendAction('wallet-send', null, false)">
+        <span>↗️</span> Enviar
+      </button>
+      <button class="wallet-btn" onclick="sendAction('wallet-receive', '0x71C8F1634b821a37De5a', false)">
+        <span>↙️</span> Recibir
+      </button>
+      <button class="wallet-btn" onclick="sendAction('wallet-swap', null, false)">
+        <span>🔄</span> Swap
+      </button>
+    </div>
+
+    <div style="padding:4px 10px 2px; font-size:11px; font-weight:700; color:#94a3b8;">Activos de Criptomoneda</div>
+    <div style="display:flex; flex-direction:column; gap:2px; padding:0 4px;">
+      <div class="token-row" onclick="sendAction('wallet-token', 'ETH', false)">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:24px; height:24px; border-radius:50%; background:#627eea; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;">Ξ</div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#fff;">Ethereum</div>
+            <div style="font-size:10px; color:#64748b;">$2,500.00</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px; font-weight:600; color:#fff;">1.25 ETH</div>
+          <div style="font-size:10px; color:#94a3b8;">$3,125.00</div>
+        </div>
+      </div>
+
+      <div class="token-row" onclick="sendAction('wallet-token', 'SOL', false)">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:24px; height:24px; border-radius:50%; background:#9945ff; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;">S</div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#fff;">Solana</div>
+            <div style="font-size:10px; color:#64748b;">$130.00</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px; font-weight:600; color:#fff;">4.20 SOL</div>
+          <div style="font-size:10px; color:#94a3b8;">$546.00</div>
+        </div>
+      </div>
+
+      <div class="token-row" onclick="sendAction('wallet-token', 'USDC', false)">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:24px; height:24px; border-radius:50%; background:#2775ca; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;">$</div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:#fff;">USD Coin</div>
+            <div style="font-size:10px; color:#64748b;">$1.00</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px; font-weight:600; color:#fff;">171.50 USDC</div>
+          <div style="font-size:10px; color:#94a3b8;">$171.50</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: VPN DE PROTECCIÓN ==================== -->
+  <div id="card-vpn" class="popup-card">
+    <div style="padding:14px 16px; display:flex; flex-direction:column; min-height:100%; box-sizing:border-box;">
+      
+      <!-- Barra superior con icono de llave clásica -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="submenu-back-btn" onclick="backToMainMenu()" title="Volver al menú">←</button>
+          <div style="width:28px; height:28px; border-radius:8px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; color:#818cf8;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="7.5" cy="15.5" r="5.5"/>
+              <path d="m21 2-9.6 9.6"/>
+              <path d="m15.5 7.5 3 3L22 7l-3-3"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#fff;">VPN de Protección</div>
+            <div style="font-size:10px; color:#64748b;">Tráfico Cifrado • Modo Seguro</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero: Anillos concéntricos y Botón Grande de Encendido -->
+      <div id="vpn-hero-container" class="vpn-hero-container">
+        <div class="vpn-ring vpn-ring-outer"></div>
+        <div class="vpn-ring vpn-ring-middle"></div>
+        <button id="vpn-power-btn" class="vpn-power-btn" onclick="toggleVpnPower()" title="Presiona para conectar la VPN">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+            <line x1="12" y1="2" x2="12" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Estado y Cooldown de 10 min -->
+      <div style="text-align:center; margin-bottom:12px;">
+        <div id="vpn-status-badge" class="vpn-status-badge">
+          <span class="vpn-status-dot"></span>
+          <span id="vpn-status-text">VPN Desactivada</span>
+        </div>
+        <div id="vpn-cooldown-box" style="display:none;" class="vpn-cooldown-text">
+          <span id="vpn-cooldown-timer">⏳ Enfriamiento anti-saturación: 10:00 restantes</span>
+        </div>
+      </div>
+
+      <!-- Vista Desconectada: Tarjeta de País Seleccionado y Drawer desplegable -->
+      <div id="vpn-idle-view">
+        <div style="font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+          Conectar a:
+        </div>
+
+        <div id="vpn-selected-loc-card" class="vpn-selected-loc-card" onclick="toggleVpnLocationDrawer()">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div id="vpn-cur-flag" style="display:flex; align-items:center; justify-content:center;">
+              <div class="vpn-flag-icon-auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            </div>
+            <div>
+              <div id="vpn-cur-country" style="font-size:12px; font-weight:700; color:#fff;">Mejor Ubicación</div>
+              <div id="vpn-cur-city" style="font-size:10px; color:#64748b;">Automático (Más rápido)</div>
+            </div>
+          </div>
+          <div id="vpn-loc-chevron" class="vpn-loc-chevron">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+
+        <!-- Drawer de países disponibles -->
+        <div id="vpn-location-drawer" class="vpn-location-drawer" style="display:none; max-height:185px; overflow-y:auto;">
+          
+          <!-- Mejor Ubicación (Auto) -->
+          <button class="vpn-country-item active" data-loc="auto" onclick="selectVpnLocation('auto', 'Mejor Ubicación', 'Automático (Más rápido)')">
+            <div class="vpn-flag-icon-auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            <div>
+              <div style="font-weight:600;">Mejor Ubicación</div>
+              <div style="font-size:9.5px; color:#64748b;">Automático (Baja Latencia)</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">24ms</span>
+              <div class="vpn-signal-bars" data-bars="4" title="Calidad: Excelente (24ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Estados Unidos -->
+          <button class="vpn-country-item" data-loc="US" onclick="selectVpnLocation('US', 'Estados Unidos', 'Nueva York / Miami')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-us"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-us)"><rect width="32" height="32" fill="#b22234"/><rect y="4.9" width="32" height="4.9" fill="#ffffff"/><rect y="14.8" width="32" height="4.9" fill="#ffffff"/><rect y="24.6" width="32" height="4.9" fill="#ffffff"/><rect width="14" height="17" fill="#3c3b6e"/><circle cx="4" cy="5" r="1.1" fill="#ffffff"/><circle cx="10" cy="5" r="1.1" fill="#ffffff"/><circle cx="7" cy="8.5" r="1.1" fill="#ffffff"/><circle cx="4" cy="12" r="1.1" fill="#ffffff"/><circle cx="10" cy="12" r="1.1" fill="#ffffff"/></g></svg>
+            <div>
+              <div style="font-weight:600;">Estados Unidos</div>
+              <div style="font-size:9.5px; color:#64748b;">Nueva York / Miami</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">92ms</span>
+              <div class="vpn-signal-bars" data-bars="3" title="Calidad: Muy Buena (92ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Alemania -->
+          <button class="vpn-country-item" data-loc="DE" onclick="selectVpnLocation('DE', 'Alemania', 'Frankfurt')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-de"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-de)"><rect width="32" height="10.7" fill="#1e1e1e"/><rect y="10.7" width="32" height="10.7" fill="#dd0000"/><rect y="21.4" width="32" height="10.7" fill="#ffce00"/></g></svg>
+            <div>
+              <div style="font-weight:600;">Alemania</div>
+              <div style="font-size:9.5px; color:#64748b;">Frankfurt</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">32ms</span>
+              <div class="vpn-signal-bars" data-bars="4" title="Calidad: Excelente (32ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- España -->
+          <button class="vpn-country-item" data-loc="ES" onclick="selectVpnLocation('ES', 'España', 'Madrid')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-es"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-es)"><rect width="32" height="8" fill="#aa151b"/><rect y="8" width="32" height="16" fill="#f1bf00"/><rect y="24" width="32" height="8" fill="#aa151b"/><circle cx="9" cy="16" r="2.5" fill="#aa151b"/></g></svg>
+            <div>
+              <div style="font-weight:600;">España</div>
+              <div style="font-size:9.5px; color:#64748b;">Madrid</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">38ms</span>
+              <div class="vpn-signal-bars" data-bars="4" title="Calidad: Excelente (38ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Países Bajos -->
+          <button class="vpn-country-item" data-loc="NL" onclick="selectVpnLocation('NL', 'Países Bajos', 'Ámsterdam')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-nl"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-nl)"><rect width="32" height="10.7" fill="#ae1c28"/><rect y="10.7" width="32" height="10.7" fill="#ffffff"/><rect y="21.4" width="32" height="10.7" fill="#21468b"/></g></svg>
+            <div>
+              <div style="font-weight:600;">Países Bajos</div>
+              <div style="font-size:9.5px; color:#64748b;">Ámsterdam</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">35ms</span>
+              <div class="vpn-signal-bars" data-bars="4" title="Calidad: Excelente (35ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Reino Unido -->
+          <button class="vpn-country-item" data-loc="GB" onclick="selectVpnLocation('GB', 'Reino Unido', 'Londres')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-gb"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-gb)"><rect width="32" height="32" fill="#012169"/><path d="M0 0 L32 32 M32 0 L0 32" stroke="#ffffff" stroke-width="4.5"/><path d="M0 0 L32 32 M32 0 L0 32" stroke="#c8102e" stroke-width="2.2"/><path d="M16 0 V32 M0 16 H32" stroke="#ffffff" stroke-width="6.5"/><path d="M16 0 V32 M0 16 H32" stroke="#c8102e" stroke-width="3.8"/></g></svg>
+            <div>
+              <div style="font-weight:600;">Reino Unido</div>
+              <div style="font-size:9.5px; color:#64748b;">Londres</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">45ms</span>
+              <div class="vpn-signal-bars" data-bars="3" title="Calidad: Muy Buena (45ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+
+          <!-- Francia -->
+          <button class="vpn-country-item" data-loc="FR" onclick="selectVpnLocation('FR', 'Francia', 'París')">
+            <svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cf1-fr"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cf1-fr)"><rect width="10.7" height="32" fill="#002395"/><rect x="10.7" width="10.7" height="32" fill="#ffffff"/><rect x="21.4" width="10.7" height="32" fill="#ed2939"/></g></svg>
+            <div>
+              <div style="font-weight:600;">Francia</div>
+              <div style="font-size:9.5px; color:#64748b;">París</div>
+            </div>
+            <div class="vpn-signal-group">
+              <span class="vpn-ping-tag">48ms</span>
+              <div class="vpn-signal-bars" data-bars="3" title="Calidad: Muy Buena (48ms)">
+                <span class="vpn-signal-bar b1"></span>
+                <span class="vpn-signal-bar b2"></span>
+                <span class="vpn-signal-bar b3"></span>
+                <span class="vpn-signal-bar b4"></span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista Conectada: Caja de información del túnel -->
+      <div id="vpn-connected-box" class="vpn-info-box" style="display:none; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#64748b; font-size:11px;">IP Asignada:</span>
+          <span id="vpn-conn-ip" style="color:#10b981; font-weight:700; font-size:11.5px;">Cargando...</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#64748b; font-size:11px;">Servidor:</span>
+          <span id="vpn-conn-loc" style="color:#fff; font-weight:600; font-size:11px;">Alemania (Frankfurt)</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#64748b; font-size:11px;">Latencia (Ping):</span>
+          <span id="vpn-conn-ping" style="color:#38bdf8; font-weight:600; font-size:11px;">140ms</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#64748b; font-size:11px;">Protección DNS:</span>
+          <span style="color:#10b981; font-weight:600; font-size:11px;">Bloqueadas (0 leaks)</span>
+        </div>
+      </div>
+
+      <!-- Botón Cancelar Conexión (Aparece cuando está conectando o conectado) -->
+      <div id="vpn-cancel-container" style="display:none; margin-top:8px;">
+        <button id="vpn-cancel-btn" class="vpn-disconnect-btn" onclick="cancelVpnConnection()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          <span id="vpn-cancel-btn-text">Cancelar Conexión</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: EXTENSIONES ==================== -->
+  <div id="card-extensions" class="popup-card">
+    <div style="padding:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="submenu-back-btn" onclick="backToMainMenu()" title="Volver al menú">←</button>
+          <div style="width:26px; height:26px; border-radius:6px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; color:#60a5fa;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.5 2.5 0 0 1 0 5H2V20a2 2 0 0 0 2 2h3.8v-1.5a2.5 2.5 0 0 1 5 0V22H17a2 2 0 0 0 2-2v-4h1.5a2.5 2.5 0 0 0 0-5z"/></svg>
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#fff;">Extensiones del Navegador</div>
+        </div>
+        <button onclick="sendAction('open-web-store', null, true)" style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#60a5fa; font-size:10px; font-weight:600; padding:3px 7px; border-radius:6px; cursor:pointer;">
+          + Chrome Store
+        </button>
+      </div>
+
+      <div class="ext-item-row">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#fff;">🛡️ uBlock & Brave Shields Core</div>
+          <div style="font-size:10px; color:#64748b;">Bloqueador de rastreo y publicidad</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked onchange="sendAction('toggle-ext', 'ublock', false)"><span class="slider"></span></label>
+      </div>
+
+      <div class="ext-item-row">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#fff;">🌙 Dark Reader Pro</div>
+          <div style="font-size:10px; color:#64748b;">Fuerza tema oscuro en la web</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked onchange="sendAction('toggle-ext', 'dark', false)"><span class="slider"></span></label>
+      </div>
+
+      <div class="ext-item-row">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#fff;">⚡ Turbo Direct3D11 Engine</div>
+          <div style="font-size:10px; color:#64748b;">Aceleración por GPU y TCP Fast Open</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked onchange="sendAction('toggle-ext', 'turbo', false)"><span class="slider"></span></label>
+      </div>
+
+      <div class="ext-item-row">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#fff;">🎬 Cinema Co-Watching Sync</div>
+          <div style="font-size:10px; color:#64748b;">Sincronización P2P para ver juntos</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked onchange="sendAction('toggle-ext', 'cinema', false)"><span class="slider"></span></label>
+      </div>
+
+      <div class="ext-item-row">
+        <div>
+          <div style="font-size:12px; font-weight:600; color:#fff;">👁️ WhatsApp Phantom Vault</div>
+          <div style="font-size:10px; color:#64748b;">Ojo de halcón para mensajes y estados</div>
+        </div>
+        <label class="switch"><input type="checkbox" checked onchange="sendAction('toggle-ext', 'phantom', false)"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VISTA: MARCADORES Y LISTAS ==================== -->
+  <div id="card-bookmarks" class="popup-card">
+    <div style="padding:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="submenu-back-btn" onclick="backToMainMenu()" title="Volver al menú">←</button>
+          <div style="width:26px; height:26px; border-radius:6px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; color:#f59e0b;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#fff;">Marcadores y Listas</div>
+        </div>
+        <button onclick="sendAction('bookmark-current', null, true)" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:#f59e0b; font-size:10px; font-weight:600; padding:4px 8px; border-radius:6px; cursor:pointer;">
+          ⭐ Guardar actual
+        </button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <button class="menu-item" onclick="sendAction('toggle-bookmarks-bar', null, true)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/></svg>
+          <span>Mostrar barra de marcadores</span>
+          <span class="menu-badge">Ctrl+Mayús+B</span>
+        </button>
+        <button class="menu-item" onclick="sendAction('history', null, true)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Abrir todos los marcadores</span>
+        </button>
+      </div>
+
+      <div class="menu-separator"></div>
+      <div style="font-size:11px; font-weight:600; color:#94a3b8; padding:4px 6px;">Marcadores Guardados:</div>
+      <div id="bookmarks-quick-list" style="display:flex; flex-direction:column; gap:2px; max-height:220px; overflow-y:auto;">
+        <!-- Rellenado dinámicamente -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const api = window.menuApi;
+    let currentPayload = null;
+
+    function sendAction(action, payload, closePopup = false) {
+      if (api) {
+        api.sendAction(action, payload);
+        if (closePopup) {
+          api.close();
+        }
+      }
+    }
+
+    function openSubmenu(id) {
+      if (id === 'wallet') {
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+        const wCard = document.getElementById('card-wallet');
+        if (wCard) wCard.classList.add('active');
+        return;
+      }
+      if (id === 'vpn') {
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+        const vCard = document.getElementById('card-vpn');
+        if (vCard) vCard.classList.add('active');
+        return;
+      }
+      if (id === 'ext-full') {
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+        const eCard = document.getElementById('card-extensions');
+        if (eCard) eCard.classList.add('active');
+        return;
+      }
+      if (id === 'bm-full') {
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+        const bCard = document.getElementById('card-bookmarks');
+        if (bCard) {
+          bCard.classList.add('active');
+          renderBookmarksInCard(currentPayload?.data?.bookmarks);
+        }
+        return;
+      }
+
+      const targetId = id.startsWith('sub-') ? id : ('sub-' + id);
+      const targetEl = document.getElementById(targetId);
+      if (!targetEl) return;
+
+      const mainView = document.getElementById('menu-main-view');
+      if (mainView) mainView.style.display = 'none';
+      document.querySelectorAll('.submenu-container').forEach(sm => sm.classList.remove('active'));
+      targetEl.classList.add('active');
+    }
+
+    function backToMainMenu() {
+      document.querySelectorAll('.submenu-container').forEach(sm => sm.classList.remove('active'));
+      const mainView = document.getElementById('menu-main-view');
+      if (mainView) mainView.style.display = 'flex';
+      const menuCard = document.getElementById('card-menu');
+      if (menuCard) {
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+        menuCard.classList.add('active');
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    if (api) {
+      api.onRender((payload) => {
+        currentPayload = payload;
+        const type = payload.type;
+        const data = payload.data || {};
+
+        document.querySelectorAll('.popup-card').forEach(c => c.classList.remove('active'));
+
+        if (type === 'turbo') {
+          const card = document.getElementById('card-turbo');
+          card.classList.add('active');
+
+          const sw = document.getElementById('turbo-switch');
+          const tier = document.getElementById('turbo-tier-label');
+          const cpuRam = document.getElementById('turbo-cpu-ram');
+          const gpu = document.getElementById('turbo-gpu');
+          const preconnect = document.getElementById('turbo-preconnect');
+          const quic = document.getElementById('turbo-quic');
+
+          if (sw) sw.checked = !!data.enabled;
+          if (tier) {
+            tier.innerText = data.enabled 
+              ? `Tier ${data.tier || 3} • Aceleración Extrema` 
+              : 'Modo Ahorro • Estándar';
+            tier.style.color = data.enabled ? '#ffc107' : '#94a3b8';
+          }
+          if (cpuRam) cpuRam.innerText = `${data.cpuCores || 8} Núcleos • ${data.totalRamGB || 16} GB RAM`;
+          if (gpu) gpu.innerText = data.gpuName || 'GPU Direct3D11 Nativa';
+          if (preconnect) {
+            preconnect.innerText = data.enabled ? 'Activa (0ms lag)' : 'Desactivada';
+            preconnect.style.color = data.enabled ? '#10b981' : '#94a3b8';
+          }
+          if (quic) {
+            quic.innerText = data.enabled ? 'Habilitada' : 'Desactivada';
+            quic.style.color = data.enabled ? '#10b981' : '#94a3b8';
+          }
+        } else if (type === 'shield') {
+          const card = document.getElementById('card-shield');
+          card.classList.add('active');
+
+          const count = document.getElementById('shield-count');
+          const sw = document.getElementById('shield-switch');
+          const dom = document.getElementById('shield-domain');
+          const lastUpdateEl = document.getElementById('shield-last-update');
+          const badgeEl = document.getElementById('shield-rules-badge');
+          const dotEl = document.getElementById('shield-status-dot');
+          const btnText = document.getElementById('btn-update-rules-text');
+
+          if (count) count.innerText = (data.totalBlocked || 0).toString();
+          if (sw) sw.checked = data.isEnabled !== false;
+          if (dom) dom.innerText = data.domain || 'este sitio';
+
+          const updateInfo = data.updateInfo;
+          if (updateInfo) {
+            if (updateInfo.status === 'updating') {
+              if (badgeEl) { badgeEl.innerText = 'Actualizando...'; badgeEl.style.color = '#38bdf8'; badgeEl.style.background = 'rgba(56,189,248,0.15)'; }
+              if (dotEl) { dotEl.style.background = '#38bdf8'; dotEl.style.boxShadow = '0 0 6px #38bdf8'; }
+              if (btnText) btnText.innerText = 'Buscando...';
+            } else if (updateInfo.status === 'error') {
+              if (badgeEl) { badgeEl.innerText = 'Sin red'; badgeEl.style.color = '#f87171'; badgeEl.style.background = 'rgba(239,68,68,0.15)'; }
+              if (dotEl) { dotEl.style.background = '#f87171'; dotEl.style.boxShadow = '0 0 6px #f87171'; }
+              if (btnText) btnText.innerText = 'Reintentar';
+            } else {
+              if (badgeEl) { badgeEl.innerText = 'Al día'; badgeEl.style.color = '#10b981'; badgeEl.style.background = 'rgba(16,185,129,0.15)'; }
+              if (dotEl) { dotEl.style.background = '#10b981'; dotEl.style.boxShadow = '0 0 6px #10b981'; }
+              if (btnText) btnText.innerText = 'Actualizar';
+            }
+
+            if (lastUpdateEl) {
+              if (updateInfo.lastUpdated) {
+                const diffMin = Math.round((Date.now() - updateInfo.lastUpdated) / 60000);
+                if (diffMin < 2) {
+                  lastUpdateEl.innerText = 'Actualizado hace un momento';
+                } else if (diffMin < 60) {
+                  lastUpdateEl.innerText = `Actualizado hace ${diffMin} min`;
+                } else {
+                  const hours = Math.round(diffMin / 60);
+                  lastUpdateEl.innerText = `Actualizado hace ${hours} h`;
+                }
+              } else {
+                lastUpdateEl.innerText = 'Reglas base activas';
+              }
+            }
+          }
+        } else if (type === 'cinema') {
+          const card = document.getElementById('card-cinema');
+          card.classList.add('active');
+
+          const lightsSw = document.getElementById('cinema-lights-switch');
+          const idleView = document.getElementById('cinema-view-idle');
+          const connView = document.getElementById('cinema-view-connected');
+          const codeEl = document.getElementById('cinema-connected-code');
+          const roleEl = document.getElementById('cinema-role-label');
+          const btnCreate = document.getElementById('btn-create-room');
+          const btnJoin = document.getElementById('btn-join-room');
+
+          if (btnCreate) {
+            btnCreate.disabled = false;
+            btnCreate.innerHTML = '✨ Crear Nueva Sala de Cine';
+          }
+          if (btnJoin) {
+            btnJoin.disabled = false;
+            btnJoin.innerText = 'Unirse';
+          }
+
+          if (lightsSw) lightsSw.checked = !!data.lightsDimmed;
+
+          if (data.inRoom && data.roomId) {
+            if (idleView) idleView.style.display = 'none';
+            if (connView) connView.style.display = 'flex';
+            if (codeEl) codeEl.innerText = data.roomId;
+            if (roleEl) {
+              roleEl.innerText = data.isHost 
+                ? (data.partnerConnected ? '👑 Anfitrión • ¡Amigo Conectado! 🟢' : '👑 Anfitrión • Esperando a tu amigo...')
+                : '🍿 Invitado • Sincronizado con anfitrión 🟢';
+              roleEl.style.color = data.partnerConnected ? '#10b981' : '#94a3b8';
+            }
+          } else {
+            if (idleView) idleView.style.display = 'flex';
+            if (connView) connView.style.display = 'none';
+          }
+        } else if (type === 'menu') {
+          const card = document.getElementById('card-menu');
+          card.classList.add('active');
+          backToMainMenu();
+          if (data.zoomFactor) {
+            currentZoom = data.zoomFactor;
+            const disp = document.getElementById('menu-zoom-display');
+            if (disp) disp.innerText = `${Math.round(currentZoom * 100)} %`;
+          }
+          if (data.sidebarMode) {
+            document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById(`seg-sidebar-${data.sidebarMode === 'active' ? 'on' : data.sidebarMode === 'auto' ? 'auto' : 'off'}`);
+            if (btn) btn.classList.add('active');
+          }
+        } else if (type === 'wallet') {
+          const card = document.getElementById('card-wallet');
+          if (card) card.classList.add('active');
+        } else if (type === 'vpn') {
+          const card = document.getElementById('card-vpn');
+          if (card) card.classList.add('active');
+          if (data && data.vpnState) {
+            renderVpnState(data.vpnState);
+          }
+        } else if (type === 'extensions') {
+          const card = document.getElementById('card-extensions');
+          if (card) card.classList.add('active');
+        } else if (type === 'bookmarks') {
+          const card = document.getElementById('card-bookmarks');
+          if (card) {
+            card.classList.add('active');
+            renderBookmarksInCard(data.bookmarks);
+          }
+        }
+      });
+    }
+
+    function renderBookmarksInCard(bookmarks) {
+      const bList = document.getElementById('bookmarks-quick-list');
+      if (!bList) return;
+      const list = bookmarks || currentPayload?.data?.bookmarks;
+      if (!list || !Array.isArray(list) || list.length === 0) {
+        bList.innerHTML = '<div style="font-size:11px; color:#64748b; padding:12px 6px; text-align:center;">No hay marcadores aún ⭐</div>';
+        return;
+      }
+      bList.innerHTML = list.map(bm => `
+        <div class="menu-item" style="padding:6px 8px; justify-content:space-between;" onclick="sendAction('navigate-url', '${(bm.url || '').replace(/'/g, "\\'")}', true)">
+          <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+            <span style="font-size:12px;">🔖</span>
+            <span style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:210px;">${escapeHtml(bm.title || bm.url)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    let currentZoom = 1.0;
+    function adjustZoom(delta) {
+      if (delta === 0) currentZoom = 1.0;
+      else currentZoom = Math.round((currentZoom + delta) * 10) / 10;
+      currentZoom = Math.max(0.25, Math.min(3.0, currentZoom));
+      const disp = document.getElementById('menu-zoom-display');
+      if (disp) disp.innerText = `${Math.round(currentZoom * 100)} %`;
+      sendAction('set-zoom', currentZoom, false);
+    }
+
+    function setSidebarMode(mode) {
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`seg-sidebar-${mode === 'active' ? 'on' : mode === 'auto' ? 'auto' : 'off'}`);
+      if (btn) btn.classList.add('active');
+      sendAction('sidebar-mode', mode, false);
+    }
+
+    // Toggle switch listeners (No cierran el popup)
+    document.getElementById('turbo-switch')?.addEventListener('change', (e) => {
+      sendAction('toggle-turbo', e.target.checked, false);
+    });
+
+    // ── VPN INTERACTIVE LOGIC (HERO BUTTON + 10-MIN COOLDOWN + LOCATION DRAWER) ──
+    let vpnCooldownInterval = null;
+    let currentVpnState = null;
+
+    function startCooldownCountdown(remainingSec) {
+      if (vpnCooldownInterval) clearInterval(vpnCooldownInterval);
+      let left = remainingSec;
+      
+      const updateTimerText = () => {
+        const box = document.getElementById('vpn-cooldown-box');
+        const timer = document.getElementById('vpn-cooldown-timer');
+        const btn = document.getElementById('vpn-power-btn');
+        const st = document.getElementById('vpn-status-text');
+        const badge = document.getElementById('vpn-status-badge');
+        if (left > 0) {
+          if (box) box.style.display = 'block';
+          const m = Math.floor(left / 60);
+          const s = left % 60;
+          if (timer) timer.innerText = `⏳ Enfriamiento anti-saturación: ${m}:${s < 10 ? '0' : ''}${s} restantes`;
+          if (btn) btn.disabled = true;
+          if (st && (!currentVpnState || (!currentVpnState.enabled && !currentVpnState.connecting))) {
+            st.innerText = 'Enfriamiento activo';
+          }
+          if (badge && (!currentVpnState || (!currentVpnState.enabled && !currentVpnState.connecting))) {
+            badge.className = 'vpn-status-badge connecting';
+          }
+        } else {
+          if (box) box.style.display = 'none';
+          if (btn && !currentVpnState?.connecting) btn.disabled = false;
+          if (st && (!currentVpnState || (!currentVpnState.enabled && !currentVpnState.connecting))) {
+            st.innerText = 'VPN Desactivada';
+          }
+          if (badge && (!currentVpnState || (!currentVpnState.enabled && !currentVpnState.connecting))) {
+            badge.className = 'vpn-status-badge';
+          }
+          if (currentVpnState) {
+            currentVpnState.cooldownRemaining = 0;
+            currentVpnState.cooldownUntil = 0;
+          }
+          clearInterval(vpnCooldownInterval);
+          vpnCooldownInterval = null;
+        }
+      };
+
+      updateTimerText();
+      vpnCooldownInterval = setInterval(() => {
+        left--;
+        updateTimerText();
+      }, 1000);
+    }
+
+    function toggleVpnPower() {
+      if (!currentVpnState) return;
+      const rem = (currentVpnState.cooldownRemaining && currentVpnState.cooldownRemaining > 0)
+        ? currentVpnState.cooldownRemaining
+        : (currentVpnState.cooldownUntil && currentVpnState.cooldownUntil > Date.now() ? Math.ceil((currentVpnState.cooldownUntil - Date.now()) / 1000) : 0);
+      if (rem > 0) {
+        startCooldownCountdown(rem);
+        return; // Bloqueado por cooldown anti-saturación
+      }
+      if (currentVpnState.enabled || currentVpnState.connecting) {
+        cancelVpnConnection();
+      } else {
+        // Actualización optimista de UI inmediata
+        const hero = document.getElementById('vpn-hero-container');
+        const btn = document.getElementById('vpn-power-btn');
+        const badge = document.getElementById('vpn-status-badge');
+        const st = document.getElementById('vpn-status-text');
+        const cancelCon = document.getElementById('vpn-cancel-container');
+        const cancelText = document.getElementById('vpn-cancel-btn-text');
+        const selCard = document.getElementById('vpn-selected-loc-card');
+        const drawer = document.getElementById('vpn-location-drawer');
+
+        if (hero) { hero.className = 'vpn-hero-container connecting'; }
+        if (btn) { btn.className = 'vpn-power-btn connecting'; }
+        if (badge) { badge.className = 'vpn-status-badge connecting'; }
+        if (st) st.innerText = 'Conectando túnel seguro...';
+        if (cancelCon) cancelCon.style.display = 'block';
+        if (cancelText) cancelText.innerText = 'Cancelar Conexión';
+        if (selCard) selCard.classList.add('disabled');
+        if (drawer) drawer.style.display = 'none';
+
+        sendAction('vpn-toggle', true, false);
+      }
+    }
+
+    function cancelVpnConnection() {
+      sendAction('vpn-toggle', false, false);
+      const st = document.getElementById('vpn-status-text');
+      if (st) st.innerText = 'Desconectando...';
+    }
+
+    function toggleVpnLocationDrawer() {
+      if (currentVpnState && (currentVpnState.enabled || currentVpnState.connecting)) {
+        return;
+      }
+      const drawer = document.getElementById('vpn-location-drawer');
+      const chev = document.getElementById('vpn-loc-chevron');
+      if (!drawer) return;
+      const isOpen = drawer.style.display !== 'none';
+      drawer.style.display = isOpen ? 'none' : 'block';
+      if (chev) {
+        if (isOpen) chev.classList.remove('open');
+        else chev.classList.add('open');
+      }
+    }
+
+    const VPN_FLAGS = {
+      'auto': `<div class="vpn-flag-icon-auto"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>`,
+      'US': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-us"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-us)"><rect width="32" height="32" fill="#b22234"/><rect y="4.9" width="32" height="4.9" fill="#ffffff"/><rect y="14.8" width="32" height="4.9" fill="#ffffff"/><rect y="24.6" width="32" height="4.9" fill="#ffffff"/><rect width="14" height="17" fill="#3c3b6e"/><circle cx="4" cy="5" r="1.1" fill="#ffffff"/><circle cx="10" cy="5" r="1.1" fill="#ffffff"/><circle cx="7" cy="8.5" r="1.1" fill="#ffffff"/><circle cx="4" cy="12" r="1.1" fill="#ffffff"/><circle cx="10" cy="12" r="1.1" fill="#ffffff"/></g></svg>`,
+      'DE': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-de"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-de)"><rect width="32" height="10.7" fill="#1e1e1e"/><rect y="10.7" width="32" height="10.7" fill="#dd0000"/><rect y="21.4" width="32" height="10.7" fill="#ffce00"/></g></svg>`,
+      'ES': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-es"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-es)"><rect width="32" height="8" fill="#aa151b"/><rect y="8" width="32" height="16" fill="#f1bf00"/><rect y="24" width="32" height="8" fill="#aa151b"/><circle cx="9" cy="16" r="2.5" fill="#aa151b"/></g></svg>`,
+      'NL': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-nl"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-nl)"><rect width="32" height="10.7" fill="#ae1c28"/><rect y="10.7" width="32" height="10.7" fill="#ffffff"/><rect y="21.4" width="32" height="10.7" fill="#21468b"/></g></svg>`,
+      'GB': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-gb"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-gb)"><rect width="32" height="32" fill="#012169"/><path d="M0 0 L32 32 M32 0 L0 32" stroke="#ffffff" stroke-width="4.5"/><path d="M0 0 L32 32 M32 0 L0 32" stroke="#c8102e" stroke-width="2.2"/><path d="M16 0 V32 M0 16 H32" stroke="#ffffff" stroke-width="6.5"/><path d="M16 0 V32 M0 16 H32" stroke="#c8102e" stroke-width="3.8"/></g></svg>`,
+      'FR': `<svg class="vpn-circle-flag" viewBox="0 0 32 32"><clipPath id="cfc-fr"><circle cx="16" cy="16" r="16"/></clipPath><g clip-path="url(#cfc-fr)"><rect width="10.7" height="32" fill="#002395"/><rect x="10.7" width="10.7" height="32" fill="#ffffff"/><rect y="21.4" width="10.7" height="32" fill="#ed2939"/></g></svg>`
+    };
+
+    function selectVpnLocation(code, name, city) {
+      const cFlag = document.getElementById('vpn-cur-flag');
+      const cName = document.getElementById('vpn-cur-country');
+      const cCity = document.getElementById('vpn-cur-city');
+      if (cFlag) cFlag.innerHTML = VPN_FLAGS[code] || VPN_FLAGS['auto'];
+      if (cName) cName.innerText = name;
+      if (cCity) cCity.innerText = city;
+
+      const drawer = document.getElementById('vpn-location-drawer');
+      const chev = document.getElementById('vpn-loc-chevron');
+      if (drawer) drawer.style.display = 'none';
+      if (chev) chev.classList.remove('open');
+
+      document.querySelectorAll('.vpn-country-item').forEach(item => {
+        if (item.getAttribute('data-loc') === code) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      sendAction('vpn-location', code, false);
+    }
+
+    function renderVpnState(state) {
+      if (!state) return;
+      currentVpnState = state;
+
+      const hero = document.getElementById('vpn-hero-container');
+      const btn = document.getElementById('vpn-power-btn');
+      const badge = document.getElementById('vpn-status-badge');
+      const st = document.getElementById('vpn-status-text');
+      const idleView = document.getElementById('vpn-idle-view');
+      const connectedBox = document.getElementById('vpn-connected-box');
+      const cancelCon = document.getElementById('vpn-cancel-container');
+      const cancelText = document.getElementById('vpn-cancel-btn-text');
+      const selCard = document.getElementById('vpn-selected-loc-card');
+      const drawer = document.getElementById('vpn-location-drawer');
+
+      // 1. Manejo del cooldown de 10 min
+      const rem = (state.cooldownRemaining && state.cooldownRemaining > 0)
+        ? state.cooldownRemaining
+        : (state.cooldownUntil && state.cooldownUntil > Date.now() ? Math.ceil((state.cooldownUntil - Date.now()) / 1000) : 0);
+
+      if (rem > 0 && !state.enabled && !state.connecting) {
+        startCooldownCountdown(rem);
+      } else {
+        if (vpnCooldownInterval) {
+          clearInterval(vpnCooldownInterval);
+          vpnCooldownInterval = null;
+        }
+        const box = document.getElementById('vpn-cooldown-box');
+        if (box) box.style.display = 'none';
+        if (btn) btn.disabled = false;
+      }
+
+      // 2. Estados: Conectando, Conectado o Desconectado
+      if (state.connecting) {
+        if (hero) { hero.className = 'vpn-hero-container connecting'; }
+        if (btn) { btn.className = 'vpn-power-btn connecting'; btn.disabled = false; }
+        if (badge) { badge.className = 'vpn-status-badge connecting'; }
+        if (st) st.innerText = 'Conectando túnel seguro...';
+        if (idleView) idleView.style.display = 'block';
+        if (connectedBox) connectedBox.style.display = 'none';
+        if (cancelCon) cancelCon.style.display = 'block';
+        if (cancelText) cancelText.innerText = 'Cancelar Conexión';
+        if (selCard) selCard.classList.add('disabled');
+        if (drawer) drawer.style.display = 'none';
+      } else if (state.enabled) {
+        if (hero) { hero.className = 'vpn-hero-container connected'; }
+        if (btn) { btn.className = 'vpn-power-btn connected'; btn.disabled = false; }
+        if (badge) { badge.className = 'vpn-status-badge connected'; }
+        if (st) st.innerText = `VPN Conectada (${state.ping || 140}ms)`;
+        
+        // Requerimiento del usuario: Al estar conectado, solo mostrar info y botón de cancelar
+        if (idleView) idleView.style.display = 'none';
+        if (connectedBox) connectedBox.style.display = 'flex';
+        if (cancelCon) cancelCon.style.display = 'block';
+        if (cancelText) cancelText.innerText = 'Cancelar / Desconectar';
+
+        const cIp = document.getElementById('vpn-conn-ip');
+        const cLoc = document.getElementById('vpn-conn-loc');
+        const cPing = document.getElementById('vpn-conn-ping');
+        if (cIp) cIp.innerText = state.ip || 'Oculta';
+        if (cLoc) cLoc.innerText = state.locationName || state.location || 'Alemania (Frankfurt)';
+        if (cPing) cPing.innerText = `${state.ping || 140}ms`;
+      } else {
+        // Desconectado
+        if (hero) { hero.className = 'vpn-hero-container'; }
+        if (btn) {
+          btn.className = 'vpn-power-btn';
+          btn.disabled = rem > 0;
+        }
+        if (badge) {
+          badge.className = rem > 0 ? 'vpn-status-badge connecting' : 'vpn-status-badge';
+        }
+        if (st) {
+          if (rem > 0) {
+            st.innerText = 'Enfriamiento activo';
+          } else if (state.lastError) {
+            st.innerText = state.lastError.includes('Enfriamiento') ? 'Enfriamiento activo' : 'Error al conectar';
+          } else {
+            st.innerText = 'VPN Desactivada';
+          }
+        }
+        if (idleView) idleView.style.display = 'block';
+        if (connectedBox) connectedBox.style.display = 'none';
+        if (cancelCon) cancelCon.style.display = 'none';
+        if (selCard) selCard.classList.remove('disabled');
+      }
+
+      // 3. Sincronizar país seleccionado con los datos del estado
+      const currentLoc = state.location || 'auto';
+      const locNames = {
+        'auto': { name: 'Mejor Ubicación', city: 'Automático (Más rápido)' },
+        'US': { name: 'Estados Unidos', city: 'Nueva York / Miami' },
+        'DE': { name: 'Alemania', city: 'Frankfurt' },
+        'ES': { name: 'España', city: 'Madrid' },
+        'NL': { name: 'Países Bajos', city: 'Ámsterdam' },
+        'GB': { name: 'Reino Unido', city: 'Londres' },
+        'FR': { name: 'Francia', city: 'París' }
+      };
+
+      const info = locNames[currentLoc] || locNames['auto'];
+      const cFlag = document.getElementById('vpn-cur-flag');
+      const cName = document.getElementById('vpn-cur-country');
+      const cCity = document.getElementById('vpn-cur-city');
+      if (cFlag) cFlag.innerHTML = VPN_FLAGS[currentLoc] || VPN_FLAGS['auto'];
+      if (cName) cName.innerText = info.name;
+      if (cCity) cCity.innerText = info.city;
+
+      document.querySelectorAll('.vpn-country-item').forEach(item => {
+        if (item.getAttribute('data-loc') === currentLoc) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    if (api && api.onVpnStatusUpdated) {
+      api.onVpnStatusUpdated((state) => {
+        renderVpnState(state);
+      });
+    }
+
+    document.getElementById('shield-switch')?.addEventListener('change', (e) => {
+      sendAction('toggle-shield', {
+        domain: currentPayload?.data?.domain || '',
+        enabled: e.target.checked
+      }, false);
+    });
+
+    document.getElementById('btn-update-rules')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-update-rules');
+      const btnText = document.getElementById('btn-update-rules-text');
+      const badgeEl = document.getElementById('shield-rules-badge');
+      const dotEl = document.getElementById('shield-status-dot');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = 'Buscando...';
+      if (badgeEl) { badgeEl.innerText = 'Actualizando'; badgeEl.style.color = '#38bdf8'; badgeEl.style.background = 'rgba(56,189,248,0.15)'; }
+      if (dotEl) { dotEl.style.background = '#38bdf8'; dotEl.style.boxShadow = '0 0 6px #38bdf8'; }
+
+      sendAction('update-adblock-rules', null, false);
+      setTimeout(() => {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = 'Actualizar';
+      }, 6000);
+    });
+
+    // Modo Cine listeners (No cierran el popup, feedback en vivo)
+    document.getElementById('cinema-lights-switch')?.addEventListener('change', (e) => {
+      sendAction('cinema-toggle-lights', e.target.checked, false);
+    });
+
+    document.getElementById('btn-create-room')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-create-room');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '✨ Generando Sala P2P...';
+      }
+      sendAction('cinema-create-room', null, false);
+    });
+
+    const triggerJoin = () => {
+      const input = document.getElementById('input-join-code');
+      const code = input ? input.value.trim().toUpperCase() : '';
+      if (code) {
+        const btn = document.getElementById('btn-join-room');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerText = 'Conectando...';
+        }
+        sendAction('cinema-join-room', code, false);
+      }
+    };
+
+    document.getElementById('btn-join-room')?.addEventListener('click', triggerJoin);
+
+    document.getElementById('input-join-code')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        triggerJoin();
+      }
+    });
+
+    document.getElementById('btn-open-drawer')?.addEventListener('click', () => {
+      sendAction('cinema-open-drawer', null, true);
+    });
+
+    document.getElementById('btn-leave-room')?.addEventListener('click', () => {
+      const idleView = document.getElementById('cinema-view-idle');
+      const connView = document.getElementById('cinema-view-connected');
+      if (idleView) idleView.style.display = 'flex';
+      if (connView) connView.style.display = 'none';
+      sendAction('cinema-leave-room', null, false);
+    });
+
+    document.getElementById('btn-copy-code')?.addEventListener('click', () => {
+      const codeEl = document.getElementById('cinema-connected-code');
+      const btn = document.getElementById('btn-copy-code');
+      if (codeEl && codeEl.innerText) {
+        navigator.clipboard.writeText(codeEl.innerText);
+        if (btn) {
+          btn.innerHTML = '✅ ¡Código Copiado!';
+          btn.style.background = 'rgba(16, 185, 129, 0.2)';
+          btn.style.color = '#10b981';
+          setTimeout(() => {
+            btn.innerHTML = '📋 Copiar Código para Amigo';
+            btn.style.background = 'rgba(255,255,255,0.06)';
+            btn.style.color = '#e2e8f0';
+          }, 2000);
+        }
+        sendAction('cinema-copy-code', codeEl.innerText, false);
+      }
+    });
+  </script>
+</body>
+</html>
