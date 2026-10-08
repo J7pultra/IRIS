@@ -4437,6 +4437,59 @@ body.theme-tor .tab-item.active {
 }
 
 /* ==========================================================================
+   GAZE ACCESSIBILITY TOOLBAR BUTTON & STATUS DOT
+   ========================================================================== */
+.gaze-toolbar-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gaze-toolbar-btn .gaze-status-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #64748b; /* Gris inactivo */
+  border: 1.5px solid var(--bg-secondary, #1e1e28);
+  transition: all 0.25s ease;
+}
+
+.gaze-toolbar-btn.gaze-active {
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.gaze-toolbar-btn.gaze-active .gaze-status-dot {
+  background-color: #22c55e !important; /* Verde activo */
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
+}
+
+.gaze-toolbar-btn.gaze-calibrating {
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  animation: gazePulseAnim 1.2s infinite alternate;
+}
+
+.gaze-toolbar-btn.gaze-calibrating .gaze-status-dot {
+  background-color: #f59e0b !important; /* Amarillo calibrando */
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
+}
+
+@keyframes gazePulseAnim {
+  0% { opacity: 0.7; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1.03); }
+}
+
+/* ==========================================================================
    SALA DE CINE DUAL P2P (beta://sala & beta://cine)
    ========================================================================== */
 .cinema-page-wrapper {
@@ -4907,7 +4960,7 @@ body.theme-tor .tab-item.active {
   display: flex;
   align-items: center;
   justify-content: center;
-  shrink-0: 0;
+  flex-shrink: 0;
 }
 
 .cinema-mode-card.selected .cinema-mode-card-icon {

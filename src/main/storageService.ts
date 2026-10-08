@@ -53,6 +53,27 @@ export interface SettingsState {
   splitAudioEnabled?: boolean;
   aiMediaTranslatorEnabled?: boolean;
   warnOnCloseMultipleTabs?: boolean;
+  enableGazeNavigation?: boolean;
+  gazeCalibrated?: boolean;
+  gazeProfile?: GazeProfile;
+}
+
+export interface GazeProfile {
+  sensitivityX: number;
+  sensitivityY: number;
+  deadzone: number;
+  dwellTime: number;
+  dwellRadius: number;
+  blinkClickEnabled: boolean;
+  earThreshold: number;
+  soundFeedbackEnabled?: boolean;
+  cameraId?: string;
+  cameraLabel?: string;
+  calibrationModel?: {
+    coeffX: number[];
+    coeffY: number[];
+    points: { eyeX: number; eyeY: number; screenX: number; screenY: number }[];
+  };
 }
 
 export interface PhantomMessage {
@@ -112,7 +133,19 @@ const DEFAULT_SETTINGS: SettingsState = {
   timeMachineEnabled: false,
   splitAudioEnabled: false,
   aiMediaTranslatorEnabled: false,
-  warnOnCloseMultipleTabs: true
+  warnOnCloseMultipleTabs: true,
+  enableGazeNavigation: false,
+  gazeCalibrated: false,
+  gazeProfile: {
+    sensitivityX: 1.0,
+    sensitivityY: 1.0,
+    deadzone: 18,
+    dwellTime: 1000,
+    dwellRadius: 32,
+    blinkClickEnabled: true,
+    earThreshold: 0.20,
+    soundFeedbackEnabled: true
+  }
 };
 
 export class StorageService {

@@ -180,6 +180,13 @@ function configurePermissions(sess: Session): void {
       }
     }
 
+    // Otorgar permisos internos de accesibilidad y calibración a la propia app
+    if (url.startsWith('file:') || url.startsWith('beta:') || url.includes('gaze-calibration') || !url) {
+      if (['camera', 'media', 'microphone'].includes(permission)) {
+        return callback(true);
+      }
+    }
+
     if (SENSITIVE_PERMISSIONS.includes(permission)) {
       console.log(`[Session] Permiso denegado: ${permission} (${url})`);
       callback(false);
@@ -189,11 +196,12 @@ function configurePermissions(sess: Session): void {
   });
 
   sess.setPermissionCheckHandler((webContents: any, permission: any, requestingOrigin: any) => {
-    if (requestingOrigin && requestingOrigin.includes('whatsapp.com')) {
-      return true;
-    }
     return true;
   });
+
+  try {
+    (sess as any).setDevicePermissionHandler(() => true);
+  } catch {}
 }
 
 /**

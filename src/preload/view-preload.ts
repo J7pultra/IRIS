@@ -2271,4 +2271,228 @@ document.addEventListener('DOMContentLoaded', tryStartPhantomGuardian);
 window.addEventListener('load', tryStartPhantomGuardian);
 setInterval(tryStartPhantomGuardian, 1500);
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MÓDULO DE ACCESIBILIDAD VISUAL Y EVENTBUS EN WEBCONTENTSVIEW (Mirada = Cursor)
+// ══════════════════════════════════════════════════════════════════════════════
+(function initViewGazeAccessibility() {
+  let overlayContainer: HTMLDivElement | null = null;
+  let progressRing: SVGCircleElement | null = null;
+  let pulseRing: SVGCircleElement | null = null;
+  const haloRadius = 24;
+  const circumference = 2 * Math.PI * haloRadius;
+
+  let currentX = -100;
+  let currentY = -100;
+  let dwellCenterX = 0;
+  let dwellCenterY = 0;
+  let dwellStartTime = 0;
+  let isDwelling = false;
+  let dwellTime = 1000;
+  let dwellRadius = 32;
+  let lastClickTime = 0;
+  const cooldown = 500;
+  let isGazeActive = false;
+
+  function ensureOverlay() {
+    if (overlayContainer || typeof document === 'undefined' || !document.body) return;
+
+    overlayContainer = document.createElement('div');
+    overlayContainer.id = 'beta-view-gaze-cursor';
+    overlayContainer.style.cssText = `
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: ${haloRadius * 2 + 16}px !important;
+      height: ${haloRadius * 2 + 16}px !important;
+      pointer-events: none !important;
+      z-index: 2147483647 !important;
+      transform: translate3d(-100px, -100px, 0);
+      will-change: transform;
+      opacity: 0.92;
+      transition: opacity 0.2s;
+    `;
+
+    const size = haloRadius * 2 + 16;
+    const center = size / 2;
+
+    overlayContainer.innerHTML = `
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="overflow: visible; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.45));">
+        <circle cx="${center}" cy="${center}" r="${haloRadius}" fill="rgba(56, 189, 248, 0.08)" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" />
+        <circle id="view-gaze-progress-ring" cx="${center}" cy="${center}" r="${haloRadius}" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}" transform="rotate(-90 ${center} ${center})" />
+        <circle id="view-gaze-pulse-ring" cx="${center}" cy="${center}" r="${haloRadius}" fill="none" stroke="#38bdf8" stroke-width="0" opacity="0" />
+        <circle cx="${center}" cy="${center}" r="3.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" />
+      </svg>
+    `;
+
+    document.documentElement.appendChild(overlayContainer);
+    progressRing = overlayContainer.querySelector('#view-gaze-progress-ring');
+    pulseRing = overlayContainer.querySelector('#view-gaze-pulse-ring');
+  }
+
+  function removeOverlay() {
+    if (overlayContainer) {
+      overlayContainer.remove();
+      overlayContainer = null;
+      progressRing = null;
+      pulseRing = null;
+    }
+  }
+
+  function triggerClickAnimation() {
+    if (!pulseRing) return;
+    pulseRing.setAttribute('stroke-width', '4');
+    pulseRing.setAttribute('opacity', '1');
+    pulseRing.setAttribute('r', `${haloRadius}`);
+    let step = 0;
+    const anim = () => {
+      step++;
+      const r = haloRadius + step * 2;
+      const op = 1.0 - step / 10;
+      if (pulseRing) {
+        pulseRing.setAttribute('r', `${r}`);
+        pulseRing.setAttribute('opacity', `${Math.max(0, op)}`);
+      }
+      if (step < 10) requestAnimationFrame(anim);
+      else if (pulseRing) {
+        pulseRing.setAttribute('opacity', '0');
+        pulseRing.setAttribute('stroke-width', '0');
+      }
+    };
+    requestAnimationFrame(anim);
+  }
+
+  function performClickAt(x: number, y: number, buttonName: 'left' | 'right' = 'left') {
+    if (typeof document === 'undefined') return;
+    if (overlayContainer) overlayContainer.style.display = 'none';
+    const target = document.elementFromPoint(x, y) as HTMLElement;
+    if (overlayContainer) overlayContainer.style.display = 'block';
+
+    triggerClickAnimation();
+    if (!target) return;
+
+    const b = buttonName === 'right' ? 2 : 0;
+    const evtInit: MouseEventInit = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: x,
+      clientY: y,
+      screenX: x,
+      screenY: y,
+      button: b,
+      buttons: b === 0 ? 1 : 2
+    };
+
+    try {
+      target.dispatchEvent(new PointerEvent('pointerdown', evtInit));
+      target.dispatchEvent(new MouseEvent('mousedown', evtInit));
+      target.dispatchEvent(new PointerEvent('pointerup', evtInit));
+      target.dispatchEvent(new MouseEvent('mouseup', evtInit));
+      target.dispatchEvent(new MouseEvent('click', evtInit));
+
+      if (target.focus && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        target.focus();
+      }
+
+      const anchor = target.closest('a');
+      if (anchor && anchor.href && !anchor.href.startsWith('javascript:')) {
+        anchor.click();
+      }
+    } catch {}
+  }
+
+  ipcRenderer.on('accessibility-event', (event, payload: { type: string; data: any }) => {
+    if (!payload) return;
+
+    if (payload.type === 'gaze-status') {
+      isGazeActive = payload.data?.status === 'active';
+      if (!isGazeActive) {
+        removeOverlay();
+      } else {
+        ensureOverlay();
+      }
+    }
+
+    if (payload.type === 'gaze-pos' && isGazeActive) {
+      ensureOverlay();
+      if (!overlayContainer) return;
+
+      // WebContentsView está ubicado en y=84
+      const viewX = payload.data.x;
+      const viewY = payload.data.y - 84;
+
+      if (viewY < 0 || viewY > window.innerHeight) {
+        overlayContainer.style.opacity = '0';
+        return;
+      }
+
+      overlayContainer.style.opacity = '0.92';
+      currentX = viewX;
+      currentY = viewY;
+
+      const offset = haloRadius + 8;
+      overlayContainer.style.transform = `translate3d(${viewX - offset}px, ${viewY - offset}px, 0)`;
+
+      const now = performance.now();
+      if (now - lastClickTime < cooldown) return;
+
+      // Si los ojos están cerrados, parpadeando o no hay rostro detectado: DETENER DWELL
+      const isEyeClosed = payload.data?.isBlinking || (payload.data?.ear !== undefined && payload.data.ear < 0.20) || payload.data?.faceFound === false;
+      if (isEyeClosed) {
+        if (isDwelling) {
+          isDwelling = false;
+          dwellStartTime = now;
+          if (progressRing) progressRing.style.strokeDashoffset = `${circumference}`;
+        }
+        return;
+      }
+
+      const dist = Math.hypot(viewX - dwellCenterX, viewY - dwellCenterY);
+      if (dist <= dwellRadius) {
+        if (!isDwelling) {
+          isDwelling = true;
+          dwellStartTime = now;
+        }
+
+        const elapsed = now - dwellStartTime;
+        const progress = Math.min(elapsed / dwellTime, 1.0);
+
+        if (progressRing) {
+          progressRing.style.strokeDashoffset = `${circumference * (1.0 - progress)}`;
+        }
+
+        if (progress >= 1.0) {
+          lastClickTime = now;
+          isDwelling = false;
+          if (progressRing) progressRing.style.strokeDashoffset = `${circumference}`;
+          performClickAt(currentX, currentY, 'left');
+        }
+      } else {
+        dwellCenterX = viewX;
+        dwellCenterY = viewY;
+        isDwelling = false;
+        dwellStartTime = now;
+        if (progressRing) progressRing.style.strokeDashoffset = `${circumference}`;
+      }
+    }
+
+    if (payload.type === 'click' && isGazeActive) {
+      const clickX = payload.data?.x !== undefined ? payload.data.x : currentX;
+      const clickY = payload.data?.y !== undefined ? (payload.data.y - 84) : currentY;
+      if (payload.data?.source !== 'gaze-dwell' && clickY >= 0) {
+        performClickAt(clickX, clickY, payload.data?.button || 'left');
+      }
+    }
+
+    if (payload.type === 'scroll') {
+      const dir = payload.data?.direction;
+      const amt = payload.data?.amount || 320;
+      if (dir === 'down') window.scrollBy({ top: amt, behavior: 'smooth' });
+      else if (dir === 'up') window.scrollBy({ top: -amt, behavior: 'smooth' });
+      else if (dir === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
+      else if (dir === 'bottom') window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+  });
+})();
+
 

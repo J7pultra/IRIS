@@ -266,6 +266,16 @@ export const betaAPI = {
     onTorBootstrapProgress: (callback: (data: { progress: number; summary: string }) => void) => {
       ipcRenderer.on('tor-bootstrap-progress', (event, data) => callback(data));
     }
+  },
+  gaze: {
+    openCalibration: () => ipcRenderer.invoke('gaze-open-calibration'),
+    closeCalibration: () => ipcRenderer.invoke('gaze-close-calibration'),
+    broadcast: (payload: { type: string; data: any }) => ipcRenderer.send('accessibility-broadcast', payload),
+    onEvent: (callback: (payload: { type: string; data: any }) => void) => {
+      const listener = (event: any, payload: any) => callback(payload);
+      ipcRenderer.on('accessibility-event', listener);
+      return () => ipcRenderer.removeListener('accessibility-event', listener);
+    }
   }
 };
 

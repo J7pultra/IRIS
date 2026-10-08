@@ -251,6 +251,76 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     }
   });
 
+  // ── Módulo de Accesibilidad Visual (Mirada = Cursor, Fijación/Parpadeo = Clic) ──
+  let calibrationWindow: BrowserWindow | null = null;
+
+  ipcMain.handle('gaze-open-calibration', async (event) => {
+    if (calibrationWindow && !calibrationWindow.isDestroyed()) {
+      calibrationWindow.focus();
+      return true;
+    }
+
+    const parent = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+    calibrationWindow = new BrowserWindow({
+      parent: parent || undefined,
+      modal: false,
+      width: 1280,
+      height: 800,
+      fullscreen: true,
+      backgroundColor: '#07090e',
+      title: 'Calibración Visual Accesible — NavegadorBeta',
+      frame: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false,
+        preload: path.join(__dirname, '../preload/preload.js')
+      }
+    });
+
+    calibrationWindow.loadFile(path.join(__dirname, '../renderer/gaze-calibration.html'));
+
+    calibrationWindow.on('closed', () => {
+      calibrationWindow = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('accessibility-event', {
+          type: 'gaze-calibration-closed',
+          data: {}
+        });
+      }
+    });
+
+    return true;
+  });
+
+  ipcMain.handle('gaze-close-calibration', () => {
+    if (calibrationWindow && !calibrationWindow.isDestroyed()) {
+      calibrationWindow.close();
+      calibrationWindow = null;
+    }
+    return true;
+  });
+
+  ipcMain.on('accessibility-broadcast', (event, payload: { type: string; data: any }) => {
+    // Broadcast to all browser windows
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('accessibility-event', payload);
+      }
+    }
+    // Broadcast to WebContentsViews
+    try {
+      const { viewManager } = require('./main');
+      if (viewManager && viewManager.views) {
+        for (const view of viewManager.views.values()) {
+          if (view && view.webContents && !view.webContents.isDestroyed()) {
+            view.webContents.send('accessibility-event', payload);
+          }
+        }
+      }
+    } catch {}
+  });
+
   // Nota: Los handlers de AI (extract-page-context, extract-form-fields, fill-form-fields),
   //       phantom cache (get-phantom-messages, clear-phantom-messages) y
   //       memoria de pestaña (get-tab-memory) están registrados en ViewManager.registerIpc()

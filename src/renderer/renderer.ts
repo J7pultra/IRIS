@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try { setupMenus(); } catch (e) { console.error('[UI] setupMenus error:', e); }
   try { setupAiDrawer(); } catch (e) { console.error('[UI] setupAiDrawer error:', e); }
   try { setupCinemaDrawer(); } catch (e) { console.error('[UI] setupCinemaDrawer error:', e); }
+  try { setupGazeAccessibility(); } catch (e) { console.error('[UI] setupGazeAccessibility error:', e); }
 
   (window as any).navigateToUrl = navigateToUrl;
   (window as any).createTab = createTab;
@@ -267,6 +268,18 @@ function syncViewBounds() {
   }
 }
 window.addEventListener('resize', syncViewBounds);
+
+function setupGazeAccessibility() {
+  try {
+    const GazeMgr = (window as any).GazeManager;
+    if (GazeMgr) {
+      const gm = GazeMgr.getInstance();
+      gm.setupToolbarElement();
+    }
+  } catch (err) {
+    console.error('[Gaze] Error inicializando accesibilidad visual:', err);
+  }
+}
 
 // Escuchar pantalla completa de videos (YouTube / HTML5) para ocultar barra superior
 if (api && api.events && (api.events as any).onHtmlFullscreen) {
@@ -3857,7 +3870,7 @@ function renderNewTabPage(container: HTMLElement) {
 // ============================================================================
 // SISTEMA DE AJUSTES & CONFIGURACIÓN (Estilo AplicacionWeb / Will Browser)
 // ============================================================================
-let currentSettingsTab: 'motor' | 'estetica' | 'escudos' | 'medios' | 'avanzadas' = 'motor';
+let currentSettingsTab: 'motor' | 'estetica' | 'escudos' | 'medios' | 'avanzadas' | 'accesibilidad' = 'motor';
 let activePasswordModal: { type: 'adult' | 'pomodoro'; error?: string } | null = null;
 
 const settingsTabsConfig = [
@@ -3865,7 +3878,8 @@ const settingsTabsConfig = [
   { id: 'estetica', name: 'Estética y Experiencia', desc: 'Modo oscuro, animaciones, marcadores.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h3.016C20.04 16.394 22 14.394 22 12c0-5.5-4.5-10-10-10Z"/></svg>' },
   { id: 'escudos', name: 'Escudos y Privacidad', desc: 'Anti-Anuncios agresivo, rastro, HTTPS.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
   { id: 'medios', name: 'Audio y Medios', desc: 'Control de sonido, subtítulos IA, volumen.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>' },
-  { id: 'avanzadas', name: 'Funciones Avanzadas', desc: 'Funciones exclusivas e innovadoras.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM7.5 14H6c-2 0-4 2-4 4v2h20v-2c0-2-2-4-4-4h-1.5"/></svg>' }
+  { id: 'avanzadas', name: 'Funciones Avanzadas', desc: 'Funciones exclusivas e innovadoras.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM7.5 14H6c-2 0-4 2-4 4v2h20v-2c0-2-2-4-4-4h-1.5"/></svg>' },
+  { id: 'accesibilidad', name: 'Accesibilidad Visual', desc: 'Mirada = Cursor, Fijación = Clic, Edge AI.', icon: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/></svg>' }
 ];
 
 function renderSettingsPage(container: HTMLElement) {
@@ -4226,6 +4240,121 @@ function renderSettingsPage(container: HTMLElement) {
         </div>
       </div>
     `;
+  } else if (currentSettingsTab === 'accesibilidad') {
+    const profile = currentSettings.gazeProfile || {
+      sensitivityX: 1.0,
+      sensitivityY: 1.0,
+      deadzone: 18,
+      dwellTime: 1000,
+      dwellRadius: 32,
+      blinkClickEnabled: true,
+      soundFeedbackEnabled: true
+    };
+    panelHtml = `
+      <div class="settings-panel">
+        <h2 class="settings-tab-heading">Accesibilidad Visual (Eye Tracking & Edge AI)</h2>
+        <p class="settings-tab-subheading">Controla el navegador mediante el movimiento ocular ("Mirada = Cursor") y clics sin manos ("Fijación / Parpadeo = Clic"). 100% procesado localmente en tu equipo sin enviar video a la red.</p>
+
+        <!-- Toggle Maestro -->
+        <div class="settings-card" style="background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.25);">
+          <div>
+            <h3 class="setting-label flex-center" style="font-size: 16px; margin-bottom: 2px; color: #38bdf8;">
+              👁️ Navegación por Mirada (Eye Tracking)
+            </h3>
+            <p class="setting-desc" style="max-width: 520px;">
+              Activa el seguimiento de ojos a 60 FPS mediante IA en el dispositivo (Edge AI). Al desactivarlo, la cámara y el LED físico se apagan inmediatamente y devuelven el control al ratón.
+            </p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-gaze-toggle" ${currentSettings.enableGazeNavigation ? 'checked' : ''} onchange="window.handleGazeToggle(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Asistente de Calibración Inmersiva -->
+        <div class="settings-card" style="flex-direction: column; align-items: stretch; gap: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 class="setting-label" style="font-size: 16px; margin-bottom: 2px;">Calibración Visual Interactiva (9 Puntos)</h3>
+              <p class="setting-desc">
+                ${currentSettings.gazeCalibrated 
+                  ? '✨ <strong style="color: #22c55e;">Calibrado con éxito.</strong> Puedes recalibrar en cualquier momento para ajustar la precisión.' 
+                  : '⚠️ <strong style="color: #f59e0b;">No calibrado aún.</strong> Calibra tu mirada en pantalla completa para precisión óptima.'}
+              </p>
+            </div>
+            <button class="btn-primary" style="background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #07090e; font-weight: 700; white-space: nowrap;" onclick="window.openGazeCalibration()">
+              🎯 Abrir Calibración
+            </button>
+          </div>
+        </div>
+
+        <h4 class="settings-subgroup-title">Ajustes de Fijación y Respuesta</h4>
+
+        <!-- Tiempo de Fijación (Dwell Time) -->
+        <div class="settings-card">
+          <div>
+            <h3 class="setting-label" style="font-size: 16px; margin-bottom: 2px;">Tiempo de Fijación (Dwell Time)</h3>
+            <p class="setting-desc">Tiempo que debes mantener la mirada sobre un elemento para que se ejecute el clic automático.</p>
+          </div>
+          <select class="settings-select" onchange="window.updateGazeProfileKey('dwellTime', parseInt(this.value, 10))">
+            <option value="600" ${profile.dwellTime === 600 ? 'selected' : ''}>600 ms (Rápido / Avanzado)</option>
+            <option value="800" ${profile.dwellTime === 800 ? 'selected' : ''}>800 ms (Ágil)</option>
+            <option value="1000" ${profile.dwellTime === 1000 ? 'selected' : ''}>1000 ms (Recomendado estándar)</option>
+            <option value="1200" ${profile.dwellTime === 1200 ? 'selected' : ''}>1200 ms (Cómodo)</option>
+            <option value="1500" ${profile.dwellTime === 1500 ? 'selected' : ''}>1500 ms (Tranquilo)</option>
+            <option value="2000" ${profile.dwellTime === 2000 ? 'selected' : ''}>2000 ms (Pausado)</option>
+          </select>
+        </div>
+
+        <!-- Clic por Parpadeo Intencional (Blink Click) -->
+        <div class="settings-card">
+          <div>
+            <h3 class="setting-label" style="font-size: 16px; margin-bottom: 2px;">Clic por Parpadeo Intencional (EAR)</h3>
+            <p class="setting-desc">Detecta cuando cierras los ojos voluntariamente (~400 ms) para hacer clic instantáneo, ignorando parpadeos reflejos.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-blink-click" ${profile.blinkClickEnabled !== false ? 'checked' : ''} onchange="window.updateGazeProfileKey('blinkClickEnabled', this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Sonido de Confirmación -->
+        <div class="settings-card">
+          <div>
+            <h3 class="setting-label" style="font-size: 16px; margin-bottom: 2px;">Sonido Suave de Confirmación</h3>
+            <p class="setting-desc">Reproduce un tono armónico sintetizado al ejecutar un clic para feedback auditivo inmediato.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="setting-sound-feedback" ${profile.soundFeedbackEnabled !== false ? 'checked' : ''} onchange="window.updateGazeProfileKey('soundFeedbackEnabled', this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Zona Muerta (Anti-Jitter) -->
+        <div class="settings-card">
+          <div>
+            <h3 class="setting-label" style="font-size: 16px; margin-bottom: 2px;">Zona Muerta / Filtro Anti-Temblor</h3>
+            <p class="setting-desc">Tolerancia para micro-sacadas oculares involuntarias para congelar el cursor sobre enlaces y botones.</p>
+          </div>
+          <select class="settings-select" onchange="window.updateGazeProfileKey('deadzone', parseInt(this.value, 10))">
+            <option value="12" ${profile.deadzone === 12 ? 'selected' : ''}>12 px (Sensible)</option>
+            <option value="18" ${profile.deadzone === 18 ? 'selected' : ''}>18 px (Equilibrado)</option>
+            <option value="26" ${profile.deadzone === 26 ? 'selected' : ''}>26 px (Ultra-Estable)</option>
+            <option value="36" ${profile.deadzone === 36 ? 'selected' : ''}>36 px (Máxima Inmovilidad)</option>
+          </select>
+        </div>
+
+        <!-- Arquitectura Abierta e Integración -->
+        <div class="settings-card info-card" style="margin-top: 10px;">
+          <div>
+            <h3 class="setting-label" style="font-size: 14px; margin-bottom: 2px;">Arquitectura Desacoplada (AccessibilityEventBus)</h3>
+            <p class="setting-desc" style="font-size: 12px;">
+              Este módulo emite y escucha eventos estándar mediante <code>window.AccessibilityEventBus</code>. El módulo de reconocimiento de voz y otros controladores externos pueden disparar clics o desplazamiento sin acoplamiento de código.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   container.innerHTML = `
@@ -4294,10 +4423,42 @@ function renderBlockedPage(container: HTMLElement, url: string = '') {
 }
 
 // Handlers Globales de Ajustes
-(window as any).switchSettingsTab = (tabId: 'motor' | 'estetica' | 'escudos' | 'medios' | 'avanzadas') => {
+(window as any).switchSettingsTab = (tabId: 'motor' | 'estetica' | 'escudos' | 'medios' | 'avanzadas' | 'accesibilidad') => {
   currentSettingsTab = tabId;
   const container = document.getElementById('internal-pages');
   if (container) renderSettingsPage(container);
+};
+
+(window as any).handleGazeToggle = async (checked: boolean) => {
+  const gm = (window as any).gazeManager || ((window as any).GazeManager ? (window as any).GazeManager.getInstance() : null);
+  if (gm) {
+    await gm.toggle(checked);
+    currentSettings = await api.settings.get() || {};
+    const container = document.getElementById('internal-pages');
+    if (container && currentSettingsTab === 'accesibilidad') renderSettingsPage(container);
+    showToast(checked ? '👁️ Seguimiento de mirada activado' : 'Seguimiento de mirada desactivado (cámara liberada)', 'info');
+  }
+};
+
+(window as any).openGazeCalibration = async () => {
+  const gm = (window as any).gazeManager || ((window as any).GazeManager ? (window as any).GazeManager.getInstance() : null);
+  if (gm) {
+    await gm.openCalibration();
+  } else if (api?.gaze?.openCalibration) {
+    await api.gaze.openCalibration();
+  }
+};
+
+(window as any).updateGazeProfileKey = async (key: string, value: any) => {
+  try {
+    const prof = { ...(currentSettings.gazeProfile || {}), [key]: value };
+    currentSettings = await api.settings.update({ gazeProfile: prof });
+    const gm = (window as any).gazeManager || ((window as any).GazeManager ? (window as any).GazeManager.getInstance() : null);
+    if (gm) gm.applyCalibrationProfile(prof);
+    showToast('Ajuste de accesibilidad actualizado', 'info');
+  } catch (e) {
+    console.error('Error saving gaze setting:', e);
+  }
 };
 
 (window as any).updateSettingKey = async (key: string, value: any) => {

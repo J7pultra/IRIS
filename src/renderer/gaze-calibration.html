@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calibración Visual Accesible — NavegadorBeta</title>
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(18, 22, 34, 0.75);
+      --border-card: rgba(255, 255, 255, 0.1);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --accent-purple: #818cf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Barra Superior */
+    header.calib-header {
+      height: 56px;
+      background: rgba(10, 13, 20, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-title svg {
+      color: var(--accent);
+    }
+
+    .stepper-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: all 0.25s ease;
+    }
+
+    .step-item.active {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .step-item.completed {
+      color: var(--success);
+    }
+
+    .step-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .step-item.active .step-badge {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #07090e;
+      font-weight: 700;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .step-item.completed .step-badge {
+      background: var(--success);
+      border-color: var(--success);
+      color: #07090e;
+      font-weight: 700;
+    }
+
+    .btn-close-calib {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-close-calib:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* Contenedor de Etapas */
+    main.stage-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      opacity: 0;
+      transform: scale(0.98);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .stage-view.active {
+      display: flex;
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ── ETAPA A: POSTURA Y ROSTRO ── */
+    .posture-wrapper {
+      max-width: 840px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .stage-title {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stage-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      max-width: 580px;
+      line-height: 1.5;
+    }
+
+    .posture-mode-selector {
+      display: inline-flex;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 9999px;
+      padding: 4px;
+      margin-bottom: 22px;
+    }
+
+    .btn-mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-mode-toggle:hover {
+      color: #fff;
+    }
+
+    .btn-mode-toggle.active {
+      background: rgba(56, 189, 248, 0.22);
+      color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .camera-preview-box {
+      position: relative;
+      width: 440px;
+      height: 330px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #000;
+      border: 2px solid var(--border-card);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .camera-preview-box.posture-ok {
+      border-color: var(--success);
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+    }
+
+    .camera-preview-box.posture-warn {
+      border-color: var(--warning);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+
+    .camera-preview-box.posture-error {
+      border-color: var(--danger);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+    }
+
+    #preview-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Efecto espejo */
+    }
+
+    /* Óvalo facial guía */
+    .face-guide-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .face-guide-oval {
+      width: 180px;
+      height: 240px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255, 255, 255, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .camera-preview-box.posture-ok .face-guide-oval {
+      border: 3px solid var(--success);
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+
+    .camera-preview-box.posture-error .face-guide-oval {
+      border: 2px dashed var(--danger);
+    }
+
+    /* Selector de Cámara */
+    .camera-selector-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      z-index: 10;
+    }
+
+    .camera-select-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(18, 22, 34, 0.85);
+      border: 1px solid var(--border-card);
+      border-radius: 9999px;
+      padding: 6px 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .camera-select-pill:hover,
+    .camera-select-pill:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    .camera-icon {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .camera-label-text {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .camera-dropdown {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+      max-width: 280px;
+    }
+
+    .camera-dropdown option {
+      background: #0f131f;
+      color: #f8fafc;
+      padding: 8px;
+    }
+
+    .btn-refresh-cam {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .btn-refresh-cam:hover {
+      color: var(--accent);
+      transform: rotate(90deg);
+    }
+
+    .camera-error-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-retry-cam {
+      background: rgba(239, 68, 68, 0.35);
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-retry-cam:hover {
+      background: rgba(239, 68, 68, 0.6);
+    }
+
+    /* Píldoras de métricas */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 24px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .metric-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .metric-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .metric-dot.ok { background: var(--success); box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+    .metric-dot.warn { background: var(--warning); }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-val {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .btn-primary-calib {
+      margin-top: 28px;
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      color: #07090e;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary-calib:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      filter: grayscale(1);
+      box-shadow: none;
+    }
+
+    .btn-primary-calib:not(:disabled):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5);
+    }
+
+    /* ── ETAPA B: MATRIZ DE 9 PUNTOS ── */
+    #stage-b {
+      padding: 0;
+      background: #04060a;
+    }
+
+    .calib-matrix-screen {
+      position: absolute;
+      inset: 0;
+      cursor: crosshair;
+    }
+
+    .matrix-hud {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 22, 34, 0.9);
+      border: 1px solid var(--border-card);
+      border-radius: 9999px;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      pointer-events: none;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+    }
+
+    .hud-status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .gaze-dot-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--warning);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .gaze-dot-indicator.focusing {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .gaze-dot-indicator.waiting {
+      background: var(--warning);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+    }
+
+    .gaze-dot-indicator.lost {
+      background: var(--danger);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    }
+
+    .gaze-dot-indicator.locked {
+      background: var(--success);
+      box-shadow: 0 0 12px var(--success);
+    }
+
+    .hud-divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .matrix-hud strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .matrix-hint-hud {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 22, 34, 0.85);
+      border: 1px solid var(--border-card);
+      border-radius: 9999px;
+      padding: 8px 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-muted);
+      pointer-events: none;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      z-index: 50;
+    }
+
+    .matrix-hint-hud svg {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* Punto de Fijación Animado (AMD Privacy View Style) */
+    .calib-point {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), top 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    /* Anillo exterior que se contrae físicamente hacia el centro al mirar fijamente */
+    .point-closing-ring {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px dashed var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
+      pointer-events: none;
+      transform: scale(1.6);
+      opacity: 0.5;
+      transition: transform 0.08s ease-out, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+    }
+
+    .calib-point.focusing .point-closing-ring {
+      border-color: #38bdf8;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      opacity: 0.95;
+    }
+
+    .calib-point.waiting .point-closing-ring {
+      border-color: rgba(245, 158, 11, 0.6);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+      opacity: 0.5;
+    }
+
+    .calib-point.lost .point-closing-ring {
+      border-color: rgba(239, 68, 68, 0.7);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+      opacity: 0.6;
+    }
+
+    .point-pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 1px solid var(--accent);
+      animation: pointPulse 1.8s infinite;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    @keyframes pointPulse {
+      0% { transform: scale(0.7); opacity: 0.6; }
+      50% { transform: scale(1.3); opacity: 0.1; }
+      100% { transform: scale(0.7); opacity: 0.6; }
+    }
+
+    .point-svg {
+      width: 64px;
+      height: 64px;
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+
+    .point-bg-circle {
+      fill: rgba(10, 14, 24, 0.85);
+      stroke: rgba(255, 255, 255, 0.15);
+      stroke-width: 2;
+    }
+
+    .point-progress-ring {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 175.9;
+      stroke-dashoffset: 175.9;
+      transition: stroke-dashoffset 0.06s linear, stroke 0.2s;
+    }
+
+    .point-inner-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 12px #ffffff;
+      transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+      pointer-events: none;
+    }
+
+    .point-check-icon {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.4);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .calib-point.locked .point-check-icon {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .calib-point.locked .point-inner-dot {
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    .calib-point.locked .point-progress-ring {
+      stroke: var(--success);
+      stroke-dashoffset: 0 !important;
+    }
+
+    .point-burst-wave {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid var(--success);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .calib-point.burst .point-burst-wave {
+      animation: lockBurst 0.5s ease-out forwards;
+    }
+
+    @keyframes lockBurst {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+
+    /* ── ETAPA C: AJUSTES FINOS & MINIJUEGO ── */
+    .tuning-layout {
+      width: 100%;
+      max-width: 1080px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .test-playground {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .playground-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .playground-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .playground-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .test-buttons-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .test-btn {
+      position: relative;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .test-btn:hover {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: var(--accent);
+    }
+
+    .test-btn.clicked {
+      transform: scale(0.97);
+      background: rgba(34, 197, 94, 0.25);
+      border-color: var(--success);
+    }
+
+    .test-btn-icon {
+      font-size: 24px;
+    }
+
+    .test-btn-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .test-btn-counter {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Barra de carga radial/progreso en botón de prueba */
+    .btn-dwell-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-purple));
+      width: 0%;
+      transition: width 0.05s linear;
+    }
+
+    /* Panel de Controles Deslizantes */
+    .sliders-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .slider-label {
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .slider-val {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .calib-range {
+      width: 100%;
+      accent-color: var(--accent);
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .toggle-info {
+      font-size: 13px;
+    }
+
+    .toggle-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Interruptor Switch */
+    .switch-calib {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch-calib input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch-calib-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .switch-calib-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    .switch-calib input:checked + .switch-calib-slider {
+      background-color: var(--accent);
+    }
+
+    .switch-calib input:checked + .switch-calib-slider:before {
+      transform: translateX(20px);
+    }
+
+    .stage-actions {
+      display: flex;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .btn-secondary-calib {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-card);
+      color: var(--text-main);
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary-calib:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-save-start {
+      flex: 1.6;
+      background: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+      color: #07090e;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+      transition: all 0.2s;
+    }
+
+    .btn-save-start:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(34, 197, 94, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado con Stepper -->
+  <header class="calib-header">
+    <div class="brand-title">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      </svg>
+      <span>Calibración Visual Accesible</span>
+    </div>
+
+    <nav class="stepper-nav">
+      <div id="step-nav-1" class="step-item active">
+        <div class="step-badge">1</div>
+        <span>Postura y Rostro</span>
+      </div>
+      <div id="step-nav-2" class="step-item">
+        <div class="step-badge">2</div>
+        <span>Matriz 9 Puntos</span>
+      </div>
+      <div id="step-nav-3" class="step-item">
+        <div class="step-badge">3</div>
+        <span>Ajuste y Prueba</span>
+      </div>
+    </nav>
+
+    <button id="btn-close-wizard" class="btn-close-calib" title="Cancelar y Salir">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </header>
+
+  <main class="stage-container">
+
+    <!-- ── ETAPA A: POSTURA Y ROSTRO ── -->
+    <section id="stage-a" class="stage-view active">
+      <div class="posture-wrapper">
+        <h1 class="stage-title">Alineación de Cabeza e Iluminación</h1>
+        <div class="posture-mode-selector">
+          <button id="btn-mode-standard" class="btn-mode-toggle active" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span>Modo Escritorio</span>
+          </button>
+          <button id="btn-mode-hospital" class="btn-mode-toggle" type="button" title="Adaptado para personas recostadas en cama o a mayor distancia">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            <span>Modo Clínico / Cama (Hospital)</span>
+          </button>
+        </div>
+        <p class="stage-subtitle" id="posture-subtitle">
+          Ubícate cómodamente frente a la pantalla. El sistema admite distancias de 35 a 150 cm y compensa automáticamente la inclinación de la cabeza si estás recostado sobre una almohada.
+        </p>
+
+        <!-- Selector Inteligente de Cámara (Laptop / Webcams USB) -->
+        <div class="camera-selector-container">
+          <div class="camera-select-pill">
+            <svg class="camera-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            <span class="camera-label-text">Cámara:</span>
+            <select id="sel-camera-device" class="camera-dropdown" title="Selecciona la cámara para calibración">
+              <option value="" disabled selected>Detectando cámaras...</option>
+            </select>
+            <button id="btn-refresh-cameras" class="btn-refresh-cam" title="Volver a escanear cámaras">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+          <div id="camera-error-banner" class="camera-error-banner" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span id="camera-error-text">No se pudo iniciar la cámara seleccionada. Prueba con otra en la lista.</span>
+            <button id="btn-retry-camera" class="btn-retry-cam">Reintentar</button>
+          </div>
+        </div>
+
+        <div id="camera-box" class="camera-preview-box posture-error">
+          <video id="preview-video" autoplay playsinline muted></video>
+          <div class="face-guide-overlay">
+            <div class="face-guide-oval"></div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-pill">
+            <div id="dot-centered" class="metric-dot"></div>
+            <div>
+              <div class="metric-label">Rostro Centrado</div>
+              <div id="val-centered" class="metric-val">Alineando...</div>
+            </div>
+          </div>
+
+          <div class="metric-pill">
+            <div id="dot-distance" class="metric-dot"></div>
+            <div>
+              <div class="metric-label">Distancia</div>
+              <div id="val-distance" class="metric-val">Midiendo...</div>
+            </div>
+          </div>
+
+          <div class="metric-pill">
+            <div id="dot-lighting" class="metric-dot"></div>
+            <div>
+              <div class="metric-label">Iluminación</div>
+              <div id="val-lighting" class="metric-val">Analizando...</div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-start-matrix" class="btn-primary-calib" disabled>
+          <span>Comenzar Calibración (9 Puntos)</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── ETAPA B: MATRIZ DE 9 PUNTOS ── -->
+    <section id="stage-b" class="stage-view">
+      <div class="calib-matrix-screen">
+        <div class="matrix-hud">
+          <div class="hud-status-indicator">
+            <span id="calib-gaze-dot" class="gaze-dot-indicator waiting"></span>
+            <span id="calib-gaze-status">Buscando fijación ocular...</span>
+          </div>
+          <div class="hud-divider"></div>
+          <strong id="point-counter">Punto 1 de 9</strong>
+        </div>
+
+        <div class="matrix-hint-hud">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          <span id="calib-hint-text">Mantén la vista fija en el centro del círculo hasta que se cierre (o haz clic sobre él)</span>
+        </div>
+
+        <div id="active-point" class="calib-point" style="left: 12%; top: 12%;">
+          <div id="point-closing-ring" class="point-closing-ring"></div>
+          <div class="point-pulse-ring"></div>
+          <svg class="point-svg" viewBox="0 0 64 64">
+            <circle class="point-bg-circle" cx="32" cy="32" r="28" />
+            <circle id="matrix-progress-ring" class="point-progress-ring" cx="32" cy="32" r="28" />
+          </svg>
+          <div class="point-inner-dot"></div>
+          <div id="point-check-icon" class="point-check-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div id="point-burst-wave" class="point-burst-wave"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ETAPA C: AJUSTES FINOS & MINIJUEGO ── -->
+    <section id="stage-c" class="stage-view">
+      <div class="tuning-layout">
+        
+        <!-- Zona de Prueba Interactiva (Minijuego) -->
+        <div class="test-playground">
+          <div class="playground-header">
+            <div>
+              <h2 class="playground-title">Zona de Prueba en Tiempo Real</h2>
+              <p class="playground-subtitle">Mira fijamente los botones para activarlos mediante tu mirada (Dwell Click).</p>
+            </div>
+          </div>
+
+          <div class="test-buttons-grid">
+            <div class="test-btn" id="test-btn-1">
+              <div class="test-btn-icon">📰</div>
+              <div class="test-btn-title">Noticias y Feed</div>
+              <div class="test-btn-counter" id="test-cnt-1">0 fijaciones</div>
+              <div class="btn-dwell-fill"></div>
+            </div>
+
+            <div class="test-btn" id="test-btn-2">
+              <div class="test-btn-icon">🎬</div>
+              <div class="test-btn-title">Videos y Cine</div>
+              <div class="test-btn-counter" id="test-cnt-2">0 fijaciones</div>
+              <div class="btn-dwell-fill"></div>
+            </div>
+
+            <div class="test-btn" id="test-btn-3">
+              <div class="test-btn-icon">⭐</div>
+              <div class="test-btn-title">Marcadores</div>
+              <div class="test-btn-counter" id="test-cnt-3">0 fijaciones</div>
+              <div class="btn-dwell-fill"></div>
+            </div>
+
+            <div class="test-btn" id="test-btn-4">
+              <div class="test-btn-icon">⚙️</div>
+              <div class="test-btn-title">Herramientas</div>
+              <div class="test-btn-counter" id="test-cnt-4">0 fijaciones</div>
+              <div class="btn-dwell-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles Deslizantes -->
+        <div class="sliders-panel">
+          <h2 style="font-size: 16px; font-weight: 700; margin-bottom: -4px;">Sensibilidad y Comodidad</h2>
+
+          <!-- Sensibilidad Horizontal -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Sensibilidad Horizontal</span>
+              <span id="lbl-sens-x" class="slider-val">1.0x</span>
+            </div>
+            <input type="range" id="rng-sens-x" class="calib-range" min="0.5" max="2.5" step="0.1" value="1.0">
+          </div>
+
+          <!-- Sensibilidad Vertical -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Sensibilidad Vertical</span>
+              <span id="lbl-sens-y" class="slider-val">1.0x</span>
+            </div>
+            <input type="range" id="rng-sens-y" class="calib-range" min="0.5" max="2.5" step="0.1" value="1.0">
+          </div>
+
+          <!-- Zona Muerta / Anti-Jitter -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Zona Muerta (Anti-Jitter)</span>
+              <span id="lbl-deadzone" class="slider-val">18 px</span>
+            </div>
+            <input type="range" id="rng-deadzone" class="calib-range" min="5" max="45" step="1" value="18">
+          </div>
+
+          <!-- Tiempo de Fijación (Dwell Time) -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <span class="slider-label">Tiempo de Fijación (Dwell)</span>
+              <span id="lbl-dwell" class="slider-val">1000 ms</span>
+            </div>
+            <input type="range" id="rng-dwell" class="calib-range" min="600" max="2000" step="100" value="1000">
+          </div>
+
+          <!-- Toggles -->
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-info">Clic por Parpadeo Intencional</div>
+              <div class="toggle-desc">Disparar clic cerrando los ojos durante ~400ms</div>
+            </div>
+            <label class="switch-calib">
+              <input type="checkbox" id="chk-blink-click" checked>
+              <span class="switch-calib-slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-info">Sonido Suave de Confirmación</div>
+              <div class="toggle-desc">Emitir un tono acústico al disparar un clic</div>
+            </div>
+            <label class="switch-calib">
+              <input type="checkbox" id="chk-sound-chime" checked>
+              <span class="switch-calib-slider"></span>
+            </label>
+          </div>
+
+          <!-- Acciones Finales -->
+          <div class="stage-actions">
+            <button id="btn-recalibrate" class="btn-secondary-calib">Recalibrar</button>
+            <button id="btn-save-start" class="btn-save-start">
+              <span>Guardar y Navegar</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="../assets/mediapipe/face_mesh.js"></script>
+  <script src="accessibility.js"></script>
+  <script src="gaze-calibration.js"></script>
+</body>
+</html>

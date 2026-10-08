@@ -199,6 +199,15 @@
         <span id="vpn-toolbar-badge" class="vpn-toolbar-badge" style="display:none;">VPN</span>
       </button>
 
+      <!-- Navegación Visual / Accesibilidad (Mirada = Cursor) -->
+      <button id="btn-gaze-toolbar" class="nav-icon-btn gaze-toolbar-btn gaze-inactive" title="Navegación Visual (Mirada = Cursor) — Inactivo">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        </svg>
+        <span class="gaze-status-dot"></span>
+      </button>
+
       <!-- WhatsApp Mensajes Eliminados y Estados Guardados -->
       <button id="btn-phantom-header" class="nav-icon-btn" title="Mensajes Eliminados y Estados Guardados (WhatsApp)" style="display: none;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2">
@@ -726,6 +735,8 @@
   <div id="toast-container"></div>
 
   <script src="./peerjs.min.js"></script>
+  <script src="../assets/mediapipe/face_mesh.js"></script>
+  <script src="./accessibility.js"></script>
   <script src="./renderer.js"></script>
 </body>
 
